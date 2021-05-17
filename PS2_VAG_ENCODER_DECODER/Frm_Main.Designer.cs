@@ -66,6 +66,7 @@ namespace PS2_VAG_ENCODER_DECODER
             this.Button_Encode.TabIndex = 3;
             this.Button_Encode.Text = "Encode";
             this.Button_Encode.UseVisualStyleBackColor = true;
+            this.Button_Encode.Click += new System.EventHandler(this.Button_Encode_Click);
             // 
             // Button_Search_Encode
             // 
@@ -109,7 +110,7 @@ namespace PS2_VAG_ENCODER_DECODER
             this.groupBox2.Controls.Add(this.label2);
             this.groupBox2.Location = new System.Drawing.Point(12, 129);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(434, 126);
+            this.groupBox2.Size = new System.Drawing.Size(434, 110);
             this.groupBox2.TabIndex = 1;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Decode:";
@@ -122,6 +123,7 @@ namespace PS2_VAG_ENCODER_DECODER
             this.Button_Decode.TabIndex = 4;
             this.Button_Decode.Text = "Decode";
             this.Button_Decode.UseVisualStyleBackColor = true;
+            this.Button_Decode.Click += new System.EventHandler(this.Button_Decode_Click);
             // 
             // Button_Search_Decode
             // 
@@ -139,10 +141,10 @@ namespace PS2_VAG_ENCODER_DECODER
             this.Textbox_File_To_Decode.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.Textbox_File_To_Decode.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.Textbox_File_To_Decode.Location = new System.Drawing.Point(47, 19);
+            this.Textbox_File_To_Decode.Location = new System.Drawing.Point(63, 19);
             this.Textbox_File_To_Decode.Name = "Textbox_File_To_Decode";
             this.Textbox_File_To_Decode.ReadOnly = true;
-            this.Textbox_File_To_Decode.Size = new System.Drawing.Size(300, 20);
+            this.Textbox_File_To_Decode.Size = new System.Drawing.Size(284, 20);
             this.Textbox_File_To_Decode.TabIndex = 1;
             // 
             // label2
@@ -150,15 +152,15 @@ namespace PS2_VAG_ENCODER_DECODER
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(6, 22);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(35, 13);
+            this.label2.Size = new System.Drawing.Size(51, 13);
             this.label2.TabIndex = 0;
-            this.label2.Text = "label2";
+            this.label2.Text = "File Path:";
             // 
             // Frm_Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(458, 267);
+            this.ClientSize = new System.Drawing.Size(458, 251);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Name = "Frm_Main";

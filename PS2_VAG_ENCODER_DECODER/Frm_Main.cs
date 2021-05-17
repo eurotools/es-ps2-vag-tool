@@ -7,94 +7,103 @@ namespace PS2_VAG_ENCODER_DECODER
 {
     public partial class Frm_Main : Form
     {
+        private string _fileToDecode = "";
+        private string _fileToEncode = "";
+
         public Frm_Main()
         {
             InitializeComponent();
+            Button_Search_Encode.Enabled = false; // TODO: Remove once functionality is completed
+            Button_Encode.Enabled = false; // TODO: Remove once functionality is completed
         }
 
         private void Button_Search_Encode_Click(object sender, EventArgs e)
         {
-            string SelectedFile = FileBrowserDialog("VAG Files (*.VAG)|*.vag", 0, true);
-            if (File.Exists(SelectedFile))
-            {
-                Textbox_File_To_Encode.Text = SelectedFile;
-            }
+            string selectedFile = FileBrowserDialog("VAG Files (*.VAG)|*.vag", 0, true);
+            if (File.Exists(selectedFile))
+                Textbox_File_To_Encode.Text = _fileToEncode = selectedFile;
         }
 
         private void Button_Search_Decode_Click(object sender, EventArgs e)
         {
-            string SelectedFile = FileBrowserDialog("VAG Files (*.VAG)|*.vag", 0, true);
-            if (File.Exists(SelectedFile))
-            {
-                Textbox_File_To_Decode.Text = SelectedFile;
+            string selectedFile = FileBrowserDialog("VAG Files (*.VAG)|*.VAG", 0, true);
+            if (File.Exists(selectedFile))
+                Textbox_File_To_Decode.Text = _fileToDecode = selectedFile;
+        }
 
-                byte[] FileData = File.ReadAllBytes(SelectedFile);
-                byte[] PCMData = PS2_VAG_Format.DecodeVAG_ADPCM(FileData, FileData.Length * 2);
-                CreateWavFile(22050, 16, 1, PCMData, Application.StartupPath + "\\" + Path.GetFileNameWithoutExtension(SelectedFile) + ".wav");
-            }
+        private void Button_Decode_Click(object sender, EventArgs e)
+        {
+            var fileName = $"{Path.GetFileNameWithoutExtension(_fileToDecode)}.wav";
+            var filePath = $"{Application.StartupPath}\\{fileName}";
+            byte[] fileData = File.ReadAllBytes(_fileToDecode);
+            byte[] pcmData = PS2_VAG_Format.DecodeVAG_ADPCM(fileData, fileData.Length * 2);
+            CreateWavFile(22050, 16, 1, pcmData, filePath);
+            MessageBox.Show($"Exported WAV file to: {filePath}");
+        }
+
+        private void Button_Encode_Click(object sender, EventArgs e)
+        {
+            // TODO!
         }
 
         //*===============================================================================================
         //* FUNCTIONS
         //*===============================================================================================
-        private string FileBrowserDialog(string BrowserFilter, int SelectedIndexFilter, bool ForceSpecifiedFilter)
+        private string FileBrowserDialog(string browserFilter, int selectedIndexFilter, bool forceSpecifiedFilter)
         {
-            string FilePath = string.Empty;
+            string filePath = string.Empty;
 
-            using (OpenFileDialog FileBrowser = new OpenFileDialog())
+            using (OpenFileDialog fileBrowser = new OpenFileDialog())
             {
-                if (ForceSpecifiedFilter)
+                if (forceSpecifiedFilter)
                 {
-                    FileBrowser.Filter = BrowserFilter;
+                    fileBrowser.Filter = browserFilter;
                 }
                 else
                 {
-                    FileBrowser.Filter = BrowserFilter + "|All files(*.*)|*.*";
+                    fileBrowser.Filter = browserFilter + "|All files(*.*)|*.*";
                 }
-                FileBrowser.FilterIndex = SelectedIndexFilter;
+                fileBrowser.FilterIndex = selectedIndexFilter;
 
-                if (FileBrowser.ShowDialog() == DialogResult.OK)
+                if (fileBrowser.ShowDialog() == DialogResult.OK)
                 {
-                    FilePath = FileBrowser.FileName;
+                    filePath = fileBrowser.FileName;
                 }
             }
 
-            return FilePath;
+            return filePath;
         }
 
-        internal static void CreateWavFile(int Frequency, int BitsPerChannel, int NumberOfChannels, byte[] PCMData, string FilePath)
+        internal static void CreateWavFile(int frequency, int bitsPerChannel, int numberOfChannels, byte[] PCMData, string filePath)
         {
-            using (FileStream WavFile = new FileStream(FilePath, FileMode.Create))
+            using (FileStream wavFile = new FileStream(filePath, FileMode.Create))
+            using (BinaryWriter binaryWriter = new BinaryWriter(wavFile))
             {
-                using (BinaryWriter BWritter = new BinaryWriter(WavFile))
+                //Write WAV Header
+                binaryWriter.Write(Encoding.UTF8.GetBytes("RIFF")); //Chunk ID
+                binaryWriter.Write((uint)(36 + PCMData.Length)); //Chunk Size
+                binaryWriter.Write(Encoding.UTF8.GetBytes("WAVE")); //Format
+                binaryWriter.Write(Encoding.UTF8.GetBytes("fmt ")); //Subchunk1 ID
+                binaryWriter.Write((uint)16); //Subchunk1 Size
+                binaryWriter.Write((ushort)1); //Audio Format
+                binaryWriter.Write((ushort)numberOfChannels); //Num Channels
+                binaryWriter.Write((uint)(frequency)); //Sample Rate
+                binaryWriter.Write((uint)((frequency * numberOfChannels * bitsPerChannel) / 8)); //Byte Rate
+                binaryWriter.Write((ushort)((numberOfChannels * bitsPerChannel) / 8)); //Block Align
+                binaryWriter.Write((ushort)(bitsPerChannel)); //Bits Per Sample
+                binaryWriter.Write(Encoding.UTF8.GetBytes("data")); //Subchunk2 ID
+                binaryWriter.Write((uint)PCMData.Length); //Subchunk2 Size
+
+                //Write PCM Data
+                for (int i = 0; i < PCMData.Length; i++)
                 {
-                    //Write WAV Header
-                    BWritter.Write(Encoding.UTF8.GetBytes("RIFF")); //Chunk ID
-                    BWritter.Write((uint)(36 + PCMData.Length)); //Chunk Size
-                    BWritter.Write(Encoding.UTF8.GetBytes("WAVE")); //Format
-                    BWritter.Write(Encoding.UTF8.GetBytes("fmt ")); //Subchunk1 ID
-                    BWritter.Write((uint)16); //Subchunk1 Size
-                    BWritter.Write((ushort)1); //Audio Format
-                    BWritter.Write((ushort)NumberOfChannels); //Num Channels
-                    BWritter.Write((uint)(Frequency)); //Sample Rate
-                    BWritter.Write((uint)((Frequency * NumberOfChannels * BitsPerChannel) / 8)); //Byte Rate
-                    BWritter.Write((ushort)((NumberOfChannels * BitsPerChannel) / 8)); //Block Align
-                    BWritter.Write((ushort)(BitsPerChannel)); //Bits Per Sample
-                    BWritter.Write(Encoding.UTF8.GetBytes("data")); //Subchunk2 ID
-                    BWritter.Write((uint)PCMData.Length); //Subchunk2 Size
-
-                    //Write PCM Data
-                    for (int i = 0; i < PCMData.Length; i++)
-                    {
-                        BWritter.Write(PCMData[i]);
-                    }
-
-                    //Close Writter
-                    BWritter.Close();
+                    binaryWriter.Write(PCMData[i]);
                 }
 
+                //Close Writter
+                binaryWriter.Close();
                 //Close File
-                WavFile.Close();
+                wavFile.Close();
             }
         }
     }
