@@ -5,6 +5,9 @@ namespace PS2_VAG_ENCODER_DECODER
 {
     internal static class PS2_VAG_Format
     {
+        //*===============================================================================================
+        //* Definitions and Classes
+        //*===============================================================================================
         private static int[,] vag_lut = new int[5, 2]
         {
             {   0,   0 },
@@ -34,6 +37,14 @@ namespace PS2_VAG_ENCODER_DECODER
             VAGF_END_MARKER_AND_SKIP = 7  /* End marker + don't decode */
         };
 
+        //Defines
+        private static int VAG_MAX_LUT_INDX = vag_lut.Length - 1;
+        private static int VAG_SAMPLE_BYTES = 14;
+        private static int VAG_SAMPLE_NIBBL = VAG_SAMPLE_BYTES * 2;
+
+        //*===============================================================================================
+        //* Encoding / Decoding Functions
+        //*===============================================================================================
         public static byte[] DecodeVAG_ADPCM(byte[] VagFileData, int NumSamples)
         {
             byte[] outp;
@@ -42,24 +53,32 @@ namespace PS2_VAG_ENCODER_DECODER
             {
                 using (BinaryWriter BWriter = new BinaryWriter(DecodedData))
                 {
-                    int[] unpacked_nibbles = new int[NumSamples * 2];
+                    int hist1 = 0;
+                    int hist2 = 0;
 
-                    //Expand 4bit -> 8bit
-                    for (int i = 0; i < NumSamples; i++)
+                    /* swy: loop for each 16-byte chunk */
+                    for (int i = 0; i < VagFileData.Length; i++)
                     {
-                        short sample_byte = VagFileData[i];
+                        int[] unpacked_nibbles = new int[VAG_SAMPLE_NIBBL];
 
-                        unpacked_nibbles[i * 2] = (sample_byte & 0x0F) >> 0;
-                        unpacked_nibbles[i * 2 + 1] = (sample_byte & 0xF0) >> 4;
-                    }
-
-                    for (int j = 0; j < 28; j++)
-                    {
-                        int s = unpacked_nibbles[j] << 12;
-
-                        if (Convert.ToBoolean(s & 0x8000))
+                        /* swy: unpack one of the 28 'scale' 4-bit nibbles in the 28 bytes; two 'scales' in one byte */
+                        for (int j = 0, nib = 0; j < VAG_SAMPLE_BYTES; j++)
                         {
-                            s = (int)(s | 0xFFFF0000);
+                            short sample_byte = VagFileData[j];
+
+                            unpacked_nibbles[nib++] = (sample_byte & 0x0F) >> 0;
+                            unpacked_nibbles[nib++] = (sample_byte & 0xF0) >> 4;
+                        }
+
+                        /* swy: decode each of the 14*2 ADPCM samples in this chunk */
+                        for (int j = 0; j < VAG_SAMPLE_NIBBL; j++)
+                        {
+                            /* swy: same as multiplying it by 4096; turn the signed nibble into a signed int first, though */
+                            int scale = unpacked_nibbles[j] << 12;
+
+                            /* swy: don't overflow the LUT array access; limit the max allowed index */
+                            byte predict_nr = (byte)Math.Min(i, VAG_MAX_LUT_INDX);
+
                         }
                     }
                 }
