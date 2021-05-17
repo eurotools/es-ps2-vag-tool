@@ -54,7 +54,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PS2_VAG_Format.cs" />
+    <Compile Include="Classes\PS2_VAG_Format.cs" />
     <EmbeddedResource Include="Frm_Main.resx">
       <DependentUpon>Frm_Main.cs</DependentUpon>
     </EmbeddedResource>
@@ -77,8 +77,6 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Classes\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
