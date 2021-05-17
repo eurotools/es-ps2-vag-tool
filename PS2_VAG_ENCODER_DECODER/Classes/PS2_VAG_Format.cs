@@ -19,10 +19,10 @@ namespace PS2_VAG_ENCODER_DECODER
 
         private struct vag_chunk
         {
-            byte shift_factor;
-            byte predict_nr; /* swy: reversed nibbles due to little-endian */
-            byte flag;
-            byte[] s;
+            public byte shift_factor;
+            public byte predict_nr; /* swy: reversed nibbles due to little-endian */
+            public byte flag;
+            public byte[] s;
         };
 
         private enum vag_flag
@@ -55,6 +55,7 @@ namespace PS2_VAG_ENCODER_DECODER
                 {
                     int hist1 = 0;
                     int hist2 = 0;
+                    vag_chunk cur_chunk = new vag_chunk();
 
                     /* swy: loop for each 16-byte chunk */
                     for (int i = 0; i < VagFileData.Length; i++)
@@ -79,6 +80,13 @@ namespace PS2_VAG_ENCODER_DECODER
                             /* swy: don't overflow the LUT array access; limit the max allowed index */
                             byte predict_nr = (byte)Math.Min(i, VAG_MAX_LUT_INDX);
 
+                            int sample = (scale >> cur_chunk.shift_factor) + (hist1 * vag_lut[predict_nr,0] + hist2 * vag_lut[predict_nr,1]) / 64;
+
+                            BWriter.Write(Math.Min(short.MaxValue, Math.Max(sample, short.MinValue)));
+
+                            /* swy: sliding window with the last two (preceding) decoded samples in the stream/file */
+                            hist2 = hist1;
+                            hist1 = sample;
                         }
                     }
                 }
