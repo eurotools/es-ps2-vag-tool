@@ -36,7 +36,7 @@ namespace PS2_VAG_ENCODER_DECODER
             var fileName = $"{Path.GetFileNameWithoutExtension(_fileToDecode)}.wav";
             var filePath = $"{Application.StartupPath}\\{fileName}";
             byte[] fileData = File.ReadAllBytes(_fileToDecode);
-            byte[] pcmData = PS2_VAG_Format.DecodeVAG_ADPCM(fileData, 1);
+            byte[] pcmData = PS2_VAG_Format.DecodeVAG_ADPCM(fileData);
             CreateWavFile(22050, 16, 1, pcmData, filePath);
             MessageBox.Show($"Exported WAV file to: {filePath}");
         }

@@ -48,7 +48,7 @@ namespace PS2_VAG_ENCODER_DECODER
         //*===============================================================================================
         //* Encoding / Decoding Functions
         //*===============================================================================================
-        public static byte[] DecodeVAG_ADPCM(byte[] vagFileData, int numChannels)
+        public static byte[] DecodeVAG_ADPCM(byte[] vagFileData)
         {
             uint inChnk = Convert.ToUInt32(vagFileData.Length / Marshal.SizeOf(typeof(vag_chunk)));
             uint outSze = (uint)(inChnk * (VAG_SAMPLE_NIBBL * sizeof(short)));
@@ -60,13 +60,14 @@ namespace PS2_VAG_ENCODER_DECODER
             {
                 int hist1 = 0;
                 int hist2 = 0;
-                vag_chunk cur_chunk = new vag_chunk();
-                cur_chunk.s = new byte[VAG_SAMPLE_BYTES];
 
                 /* swy: loop for each 16-byte chunk */
                 for (int i = 0; i < vagFileData.Length; i++)
                 {
                     int[] unpacked_nibbles = new int[VAG_SAMPLE_NIBBL];
+
+                    vag_chunk cur_chunk = new vag_chunk();
+                    cur_chunk.s = new byte[VAG_SAMPLE_BYTES];
 
                     if (cur_chunk.flag == (int)vag_flag.VAGF_END_MARKER_AND_SKIP)
                     {
