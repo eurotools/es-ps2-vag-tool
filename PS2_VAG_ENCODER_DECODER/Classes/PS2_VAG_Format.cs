@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace PS2_VAG_ENCODER_DECODER
 {
@@ -42,11 +44,15 @@ namespace PS2_VAG_ENCODER_DECODER
         private static int VAG_SAMPLE_BYTES = 14;
         private static int VAG_SAMPLE_NIBBL = VAG_SAMPLE_BYTES * 2;
 
+
         //*===============================================================================================
         //* Encoding / Decoding Functions
         //*===============================================================================================
         public static byte[] DecodeVAG_ADPCM(byte[] vagFileData, int numChannels)
         {
+            uint inChnk = Convert.ToUInt32(vagFileData.Length / Marshal.SizeOf(typeof(vag_chunk)));
+            uint outSze = (uint)(inChnk * (VAG_SAMPLE_NIBBL * sizeof(short)));
+
             byte[] outp;
 
             using (MemoryStream decodedData = new MemoryStream())
@@ -80,7 +86,7 @@ namespace PS2_VAG_ENCODER_DECODER
                     for (int j = 0; j < VAG_SAMPLE_NIBBL; j++)
                     {
                         /* swy: same as multiplying it by 4096; turn the signed nibble into a signed int first, though */
-                        int scale = unpacked_nibbles[j] << 12;
+                        int scale = SignExtended(unpacked_nibbles[j], 4) << 12;
 
                         /* swy: don't overflow the LUT array access; limit the max allowed index */
                         byte predict_nr = (byte)Math.Min(i, VAG_MAX_LUT_INDX);
@@ -100,7 +106,22 @@ namespace PS2_VAG_ENCODER_DECODER
                 }
                 outp = decodedData.ToArray();
             }
+            if (outSze == outp.Length)
+                Debug.WriteLine("Matched!!");
             return outp;
+        }
+
+        private static int SignExtended(int val, uint bits)
+        {
+            int shift = Convert.ToInt32(8 * sizeof(int) - bits);
+            var v = new UnionSignedUnsigned() { u = (uint)val << shift };
+            return v.s >> shift;
+        }
+
+        private class UnionSignedUnsigned
+        {
+            public uint u;
+            public int s;
         }
     }
 }
