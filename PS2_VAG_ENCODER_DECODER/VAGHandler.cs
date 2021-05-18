@@ -137,6 +137,9 @@ namespace PS2_VAG_ENCODER_DECODER
             return pcmData;
         }
 
+        //*===============================================================================================
+        //* Other Functions
+        //*===============================================================================================
         public static byte[] SplitVAGChannels(string FilePath, bool SplitLeft)
         {
             byte[] ChannelData;
