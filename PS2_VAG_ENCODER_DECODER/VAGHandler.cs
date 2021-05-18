@@ -150,11 +150,11 @@ namespace PS2_VAG_ENCODER_DECODER
                 {
                     if (Interleaving)
                     {
-                        vagWritter.Write(vagReader.ReadBytes(16));
+                        vagWritter.Write(vagReader.ReadBytes(128));
                     }
                     else
                     {
-                        vagReader.ReadBytes(16);
+                        vagReader.ReadBytes(128);
                     }
                     Interleaving = !Interleaving;
                 }
