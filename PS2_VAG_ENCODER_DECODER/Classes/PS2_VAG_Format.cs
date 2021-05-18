@@ -37,24 +37,23 @@ namespace PS2_VAG_ENCODER_DECODER
         //*===============================================================================================
         //* Encoding / Decoding Functions
         //*===============================================================================================
-        public static byte[] EncodeVAG_ADPCM(byte[] pcmData)
+        public static byte[] VAG_Encoder(byte[] pcmData)
         {
             return null;
         }
 
-        public static byte[] DecodeVAG_ADPCM(byte[] vagData)
+        public static byte[] VAG_Decoder(byte[] vagData)
         {
             byte[] pcmData;
 
-            using (MemoryStream vagStream = new MemoryStream(vagData))
-            using (BinaryReader vagReader = new BinaryReader(vagStream))
+            using (BinaryReader vagReader = new BinaryReader(new MemoryStream(vagData)))
             using (MemoryStream pcmStream = new MemoryStream())
             using (BinaryWriter pcmWriter = new BinaryWriter(pcmStream))
             {
                 int hist1 = 0;
                 int hist2 = 0;
 
-                while (vagStream.Position < vagData.Length)
+                while (vagReader.BaseStream.Position < vagData.Length)
                 {
                     //Struct data------
                     byte predict_shift = vagReader.ReadByte();
@@ -94,7 +93,8 @@ namespace PS2_VAG_ENCODER_DECODER
                         predict_nr = (sbyte)Math.Min(predict_nr, VAG_MAX_LUT_INDX);
 
                         short sample = (short)((scale >> shift_factor) + (hist1 * vag_lut[predict_nr, 0] + hist2 * vag_lut[predict_nr, 1]) / 64);
-                        pcmWriter.Write(sample);
+
+                        pcmWriter.Write(Math.Min(short.MaxValue, Math.Max(sample, short.MinValue)));
 
                         /* swy: sliding window with the last two (preceding) decoded samples in the stream/file */
                         hist2 = hist1;
@@ -107,9 +107,7 @@ namespace PS2_VAG_ENCODER_DECODER
                 pcmWriter.Close();
                 pcmStream.Close();
                 vagReader.Close();
-                vagStream.Close();
             }
-
             return pcmData;
         }
     }
