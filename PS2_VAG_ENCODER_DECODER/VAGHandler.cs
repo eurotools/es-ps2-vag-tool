@@ -3,12 +3,12 @@ using System.IO;
 
 namespace PS2_VAG_ENCODER_DECODER
 {
-    internal static class PS2_VAG_Format
+    internal static class VAGHandler
     {
         //*===============================================================================================
         //* Definitions and Classes
         //*===============================================================================================
-        private static int[,] vag_lut = new int[,]
+        private static int[,] VAGLut = new int[,]
         {
             {   0,   0 },
             {  60,   0 },
@@ -17,7 +17,7 @@ namespace PS2_VAG_ENCODER_DECODER
             { 122, -60 }
         };
 
-        private enum Vag_flag
+        private enum VAGFlag
         {
             VAGF_NOTHING = 0, /* Nothing*/
             VAGF_END_MARKER_AND_DEC = 1, /* End marker + decode*/
@@ -30,23 +30,24 @@ namespace PS2_VAG_ENCODER_DECODER
         };
 
         //Defines
-        private static int VAG_MAX_LUT_INDX = vag_lut.Length - 1;
+        private static int VAG_MAX_LUT_INDX = VAGLut.Length - 1;
         private static int VAG_SAMPLE_BYTES = 14;
         private static int VAG_SAMPLE_NIBBL = VAG_SAMPLE_BYTES * 2;
 
         //*===============================================================================================
         //* Encoding / Decoding Functions
         //*===============================================================================================
-        public static byte[] VAG_Encoder(byte[] pcmData)
+        public static byte[] VAGEncoder(byte[] pcmData)
         {
             return null;
         }
 
-        public static byte[] VAG_Decoder(byte[] vagData)
+        public static byte[] VAGDecoder(byte[] vagData)
         {
             byte[] pcmData;
 
-            using (BinaryReader vagReader = new BinaryReader(new MemoryStream(vagData)))
+            using (MemoryStream vagMemoryStream = new MemoryStream(vagData))
+            using (BinaryReader vagReader = new BinaryReader(vagMemoryStream))
             using (MemoryStream pcmStream = new MemoryStream())
             using (BinaryWriter pcmWriter = new BinaryWriter(pcmStream))
             {
@@ -56,16 +57,16 @@ namespace PS2_VAG_ENCODER_DECODER
                 while (vagReader.BaseStream.Position < vagData.Length)
                 {
                     //Struct data------
-                    byte predict_shift = vagReader.ReadByte();
-                    sbyte shift_factor = (sbyte)((predict_shift & 0x0F) >> 0);
-                    sbyte predict_nr = (sbyte)((predict_shift & 0xF0) >> 4);
+                    byte predictShift = vagReader.ReadByte();
+                    sbyte shiftFactor = (sbyte)((predictShift & 0x0F) >> 0);
+                    sbyte predictNr = (sbyte)((predictShift & 0xF0) >> 4);
                     byte flag = vagReader.ReadByte();
                     byte[] s = vagReader.ReadBytes(VAG_SAMPLE_BYTES);
                     //-----------------------------
 
-                    int[] unpacked_nibbles = new int[VAG_SAMPLE_NIBBL];
+                    int[] unpackedNibbles = new int[VAG_SAMPLE_NIBBL];
 
-                    if (flag == (int)Vag_flag.VAGF_END_MARKER_AND_SKIP)
+                    if (flag == (int)VAGFlag.VAGF_END_MARKER_AND_SKIP)
                     {
                         break;
                     }
@@ -73,26 +74,26 @@ namespace PS2_VAG_ENCODER_DECODER
                     /* swy: unpack one of the 28 'scale' 4-bit nibbles in the 28 bytes; two 'scales' in one byte */
                     for (int j = 0; j < VAG_SAMPLE_BYTES; j++)
                     {
-                        short sample_byte = s[j];
+                        short sampleByte = s[j];
 
-                        unpacked_nibbles[j * 2] = (sample_byte & 0x0F) >> 0;
-                        unpacked_nibbles[j * 2 + 1] = (sample_byte & 0xF0) >> 4;
+                        unpackedNibbles[j * 2] = (sampleByte & 0x0F) >> 0;
+                        unpackedNibbles[j * 2 + 1] = (sampleByte & 0xF0) >> 4;
                     }
 
                     /* swy: decode each of the 14*2 ADPCM samples in this chunk */
                     for (int j = 0; j < VAG_SAMPLE_NIBBL; j++)
                     {
                         /* swy: turn the signed nibble into a signed int first*/
-                        int scale = unpacked_nibbles[j] << 12;
+                        int scale = unpackedNibbles[j] << 12;
                         if (Convert.ToBoolean(scale & 0x8000))
                         {
                             scale = (int)(scale | 0xFFFF0000);
                         }
 
                         /* swy: don't overflow the LUT array access; limit the max allowed index */
-                        predict_nr = (sbyte)Math.Min(predict_nr, VAG_MAX_LUT_INDX);
+                        predictNr = (sbyte)Math.Min(predictNr, VAG_MAX_LUT_INDX);
 
-                        short sample = (short)((scale >> shift_factor) + (hist1 * vag_lut[predict_nr, 0] + hist2 * vag_lut[predict_nr, 1]) / 64);
+                        short sample = (short)((scale >> shiftFactor) + (hist1 * VAGLut[predictNr, 0] + hist2 * VAGLut[predictNr, 1]) / 64);
 
                         pcmWriter.Write(Math.Min(short.MaxValue, Math.Max(sample, short.MinValue)));
 
@@ -107,6 +108,7 @@ namespace PS2_VAG_ENCODER_DECODER
                 pcmWriter.Close();
                 pcmStream.Close();
                 vagReader.Close();
+                vagMemoryStream.Close();
             }
             return pcmData;
         }
