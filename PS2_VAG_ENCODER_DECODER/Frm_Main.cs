@@ -21,20 +21,24 @@ namespace PS2_VAG_ENCODER_DECODER
         {
             string selectedFile = FileBrowserDialog("VAG Files (*.VAG)|*.vag", 0, true);
             if (File.Exists(selectedFile))
+            {
                 Textbox_File_To_Encode.Text = _fileToEncode = selectedFile;
+            }
         }
 
         private void Button_Search_Decode_Click(object sender, EventArgs e)
         {
             string selectedFile = FileBrowserDialog("VAG Files (*.VAG)|*.VAG", 0, true);
             if (File.Exists(selectedFile))
+            {
                 Textbox_File_To_Decode.Text = _fileToDecode = selectedFile;
+            }
         }
 
         private void Button_Decode_Click(object sender, EventArgs e)
         {
-            var fileName = $"{Path.GetFileNameWithoutExtension(_fileToDecode)}.wav";
-            var filePath = $"{Application.StartupPath}\\{fileName}";
+            string fileName = $"{Path.GetFileNameWithoutExtension(_fileToDecode)}.wav";
+            string filePath = $"{Application.StartupPath}\\{fileName}";
             byte[] fileData = File.ReadAllBytes(_fileToDecode);
             byte[] pcmData = PS2_VAG_Format.DecodeVAG_ADPCM(fileData);
             CreateWavFile(22050, 16, 1, pcmData, filePath);
