@@ -157,82 +157,87 @@ namespace PS2_VAG_ENCODER_DECODER
         //*===============================================================================================
         //* Encoding / Decoding Functions
         //*===============================================================================================
-        public static byte[] DecodeVAG_ADPCM(byte[] vagFileData)
+        public static byte[] EncodeVAG_ADPCM(byte[] pcmData)
         {
-            byte[] PCMData;
+            return null;
+        }
 
-            using (MemoryStream VagStream = new MemoryStream(vagFileData))
-            using (BinaryReader VagReader = new BinaryReader(VagStream))
-            using (MemoryStream PCMStream = new MemoryStream())
-            using (BinaryWriter PCMWriter = new BinaryWriter(PCMStream))
+        public static byte[] DecodeVAG_ADPCM(byte[] vagData)
+        {
+            byte[] pcmData;
+
+            using (MemoryStream vagStream = new MemoryStream(vagData))
+            using (BinaryReader vagReader = new BinaryReader(vagStream))
+            using (MemoryStream pcmStream = new MemoryStream())
+            using (BinaryWriter pcmWriter = new BinaryWriter(pcmStream))
             {
-                int Hist = 0;
-                int Hist2 = 0;
-                int Hist3 = 0;
-                int Hist4 = 0;
+                int hist = 0;
+                int hist2 = 0;
+                int hist3 = 0;
+                int hist4 = 0;
 
-                while (VagStream.Position < vagFileData.Length)
+                while (vagStream.Position < vagData.Length)
                 {
-                    byte DecodingCoefficent = VagReader.ReadByte();
-                    int ShiftBy = DecodingCoefficent & 0xf;
-                    int PredictNr = DecodingCoefficent >> 0x4;
-                    byte LoopData = VagReader.ReadByte();
-                    PredictNr |= LoopData & 0xF0;
-                    int LoopFlag = LoopData & 0xf;
-                    if (LoopFlag == (int)vag_flag.VAGF_END_MARKER_AND_SKIP)
+                    byte decodingCoefficent = vagReader.ReadByte();
+                    int shiftBy = decodingCoefficent & 0xF;
+                    int predictNr = decodingCoefficent >> 0x4;
+                    byte loopData = vagReader.ReadByte();
+                    predictNr |= loopData & 0xF0;
+                    int loopFlag = loopData & 0xF;
+
+                    if (loopFlag == (int)vag_flag.VAGF_END_MARKER_AND_SKIP)
                     {
-                        VagStream.Seek(14, SeekOrigin.Current);
-                        Hist = 0;
-                        Hist2 = 0;
-                        Hist3 = 0;
-                        Hist4 = 0;
+                        vagStream.Seek(14, SeekOrigin.Current);
+                        hist = 0;
+                        hist2 = 0;
+                        hist3 = 0;
+                        hist4 = 0;
                     }
                     else
                     {
                         for (int i = 0; i < VAG_SAMPLE_BYTES; i++)
                         {
-                            byte ADPCMData = VagReader.ReadByte();
-                            int SampleFlags = ADPCMData & 0xF;
-                            int Coefficent;
-                            short Sample;
+                            byte adpcmData = vagReader.ReadByte();
+                            int sampleFlags = adpcmData & 0xF;
+                            int coefficent;
 
                             for (int ii = 0; ii <= 1; ii++)
                             {
-                                if (SampleFlags > 7)
+                                if (sampleFlags > 7)
                                 {
-                                    SampleFlags -= 16;
+                                    sampleFlags -= 16;
                                 }
 
-                                if (PredictNr < 128)
+                                if (predictNr < 128)
                                 {
-                                    Coefficent = Hist * vag_lut[PredictNr, 0] + Hist2 * vag_lut[PredictNr, 1] + Hist3 * vag_lut[PredictNr, 2] + Hist4 * vag_lut[PredictNr, 3];
+                                    coefficent = hist * vag_lut[predictNr, 0] + hist2 * vag_lut[predictNr, 1] + hist3 * vag_lut[predictNr, 2] + hist4 * vag_lut[predictNr, 3];
                                 }
                                 else
                                 {
-                                    Coefficent = 0;
+                                    coefficent = 0;
                                 }
 
-                                Sample = (short)(Coefficent / 32 + (SampleFlags << 20 - ShiftBy) + 128 >> 8);
-                                PCMWriter.Write(Sample);
+                                short sample = (short)(coefficent / 32 + (sampleFlags << 20 - shiftBy) + 128 >> 8);
+                                pcmWriter.Write(sample);
 
-                                Hist4 = Hist3;
-                                Hist3 = Hist2;
-                                Hist2 = Hist;
-                                Hist = Sample;
+                                hist4 = hist3;
+                                hist3 = hist2;
+                                hist2 = hist;
+                                hist = sample;
 
-                                SampleFlags = ADPCMData >> 4;
+                                sampleFlags = adpcmData >> 4;
                             }
                         }
                     }
                 }
-                PCMData = PCMStream.ToArray();
+                pcmData = pcmStream.ToArray();
 
-                PCMWriter.Close();
-                PCMStream.Close();
-                VagReader.Close();
-                VagStream.Close();
+                pcmWriter.Close();
+                pcmStream.Close();
+                vagReader.Close();
+                vagStream.Close();
             }
-            return PCMData;
+            return pcmData;
         }
     }
 }
