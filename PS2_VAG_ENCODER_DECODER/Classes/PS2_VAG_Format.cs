@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace PS2_VAG_ENCODER_DECODER
 {
@@ -9,137 +10,14 @@ namespace PS2_VAG_ENCODER_DECODER
         //*===============================================================================================
         private static int[,] vag_lut = new int[,]
         {
-            {      0,     0,     0,     0 },
-            {   7680,     0,     0,     0 },
-            {  14720, -6656,     0,     0 },
-            {  12544, -7040,     0,     0 },
-            {  15616, -7680,     0,     0 },
-            {  14731, -7059,     0,     0 },
-            {  14507, -7366,     0,     0 },
-            {  13920, -7522,     0,     0 },
-            {  13133, -7680,     0,     0 },
-            {  12028, -7680,     0,     0 },
-            {  10764, -7680,     0,     0 },
-            {   9359, -7680,     0,     0 },
-            {   7832, -7680,     0,     0 },
-            {   6201, -7680,     0,     0 },
-            {   4488, -7680,     0,     0 },
-            {   2717, -7680,     0,     0 },
-            {    910, -7680,     0,     0 },
-            {   -910, -7680,     0,     0 },
-            {  -2717, -7680,     0,     0 },
-            {  -4488, -7680,     0,     0 },
-            {  -6201, -7680,     0,     0 },
-            {  -7832, -7680,     0,     0 },
-            {  -9359, -7680,     0,     0 },
-            { -10764, -7680,     0,     0 },
-            { -12028, -7680,     0,     0 },
-            { -13133, -7680,     0,     0 },
-            { -13920, -7522,     0,     0 },
-            { -14507, -7366,     0,     0 },
-            { -14731, -7059,     0,     0 },
-            {   5376, -9216,  3328, -3072 },
-            {  -6400, -7168, -3328, -2304 },
-            { -10496, -7424, -3584, -1024 },
-            {   -167, -2722,  -494,  -541 },
-            {  -7430, -2221, -2298,   424 },
-            {  -8001, -3166, -2814,   289 },
-            {   6018, -4750,  2649, -1298 },
-            {   3798, -6946,  3875, -1216 },
-            {  -8237, -2596, -2071,   227 },
-            {   9199,  1982, -1382, -2316 },
-            {  13021, -3044, -3792,  1267 },
-            {  13112, -4487, -2250,  1665 },
-            {  -1668, -3744, -6456,   840 },
-            {   7819, -4328,  2111,  -506 },
-            {   9571, -1336,  -757,   487 },
-            {  10032, -2562,   300,   199 },
-            {  -4745, -4122, -5486, -1493 },
-            {  -5896,  2378, -4787, -6947 },
-            {  -1193, -9117, -1237, -3114 },
-            {   2783, -7108, -1575, -1447 },
-            {  -7334, -2062, -2212,   446 },
-            {   6127, -2577,  -315,   -18 },
-            {   9457, -1858,   102,   258 },
-            {   7876, -4483,  2126,  -538 },
-            {  -7172, -1795, -2069,   482 },
-            {  -7358, -2102, -2233,   440 },
-            {  -9170, -3509, -2674,  -391 },
-            {  -2638, -2647, -1929, -1637 },
-            {   1873,  9183,  1860, -5746 },
-            {   9214,  1859, -1124, -2427 },
-            {  13204, -3012, -4139,  1370 },
-            {  12437, -4792,  -256,   622 },
-            {  -2653, -1144, -3182, -6878 },
-            {   9331, -1048,  -828,   507 },
-            {   1642,  -620,  -946, -4229 },
-            {   4246, -7585,  -533, -2259 },
-            {  -8988, -3891, -2807,    44 },
-            {  -2562, -2735, -1730, -1899 },
-            {   3182,  -483,  -714, -1421 },
-            {   7937, -3844,  2821, -1019 },
-            {  10069, -2609,   314,   195 },
-            {   8400, -3297,  1551,  -155 },
-            {  -8529, -2775, -2432,  -336 },
-            {   9477, -1882,   108,   256 },
-            {     75, -2241,  -298, -6937 },
-            {  -9143, -4160, -2963,     5 },
-            {  -7270, -1958, -2156,   460 },
-            {  -2740,  3745,  5936, -1089 },
-            {   8993,  1948,  -683, -2704 },
-            {  13101, -2835, -3854,  1055 },
-            {   9543, -1961,   130,   250 },
-            {   5272, -4270,  3124, -3157 },
-            {  -7696, -3383, -2907,  -456 },
-            {   7309,  2523,   434, -2461 },
-            {  10275, -2867,   391,   172 },
-            {  10940, -3721,   665,    97 },
-            {     24,  -310, -1262,   320 },
-            {  -8122, -2411, -2311,  -271 },
-            {  -8511, -3067, -2337,   163 },
-            {    326, -3846,   419,  -933 },
-            {   8895,  2194,  -541, -2880 },
-            {  12073, -1876, -2017,  -601 },
-            {   8729, -3423,  1674,  -169 },
-            {  12950, -3847, -3007,  1946 },
-            {  10038, -2570,   302,   198 },
-            {   9385, -2757,  1008,    41 },
-            {  -4720, -5006, -2852, -1161 },
-            {   7869, -4326,  2135,  -501 },
-            {   2450, -8597,  1299, -2780 },
-            {  10192, -2763,   360,   181 },
-            {  11313, -4213,   833,    53 },
-            {  10154, -2716,   345,   185 },
-            {   9638, -1417,  -737,   482 },
-            {   3854, -4554,  2843, -3397 },
-            {   6699, -5659,  2249, -1074 },
-            {  11082, -3908,   728,    80 },
-            {  -1026, -9810,  -805, -3462 },
-            {  10396, -3746,  1367,   -96 },
-            {  10287,   988, -1915, -1437 },
-            {   7953,  3878,  -764, -3263 },
-            {  12689, -3375, -3354,  2079 },
-            {   6641,  3166,   231, -2089 },
-            {  -2348, -7354, -1944, -4122 },
-            {   9290, -4039,  1885,  -246 },
-            {   4633, -6403,  1748, -1619 },
-            {  11247, -4125,   802,    61 },
-            {   9807, -2284,   219,   222 },
-            {   9736, -1536,  -706,   473 },
-            {   8440, -3436,  1562,  -176 },
-            {   9307, -1021,  -835,   509 },
-            {   1698, -9025,   688, -3037 },
-            {  10214, -2791,   368,   179 },
-            {   8390,  3248,  -758, -2989 },
-            {   7201,  3316,    46, -2614 },
-            {    -88, -7809,  -538, -4571 },
-            {   6193, -5189,  2760, -1245 },
-            {  12325, -1290, -3284,   253 },
-            {  13064, -4075, -2824,  1877 },
-            {   5333,  2999,   775, -1132 },
+            {   0,   0 },
+            {  60,   0 },
+            { 115, -52 },
+            {  98, -55 },
+            { 122, -60 }
         };
 
-        private enum vag_flag
+        private enum Vag_flag
         {
             VAGF_NOTHING = 0, /* Nothing*/
             VAGF_END_MARKER_AND_DEC = 1, /* End marker + decode*/
@@ -152,7 +30,9 @@ namespace PS2_VAG_ENCODER_DECODER
         };
 
         //Defines
+        private static int VAG_MAX_LUT_INDX = vag_lut.Length - 1;
         private static int VAG_SAMPLE_BYTES = 14;
+        private static int VAG_SAMPLE_NIBBL = VAG_SAMPLE_BYTES * 2;
 
         //*===============================================================================================
         //* Encoding / Decoding Functions
@@ -171,63 +51,57 @@ namespace PS2_VAG_ENCODER_DECODER
             using (MemoryStream pcmStream = new MemoryStream())
             using (BinaryWriter pcmWriter = new BinaryWriter(pcmStream))
             {
-                int hist = 0;
+                int hist1 = 0;
                 int hist2 = 0;
-                int hist3 = 0;
-                int hist4 = 0;
 
                 while (vagStream.Position < vagData.Length)
                 {
+                    //Struct data------
                     byte predict_shift = vagReader.ReadByte();
-                    int shift = (predict_shift & 0x0F) >> 0;
-                    int predict = (predict_shift & 0xF0) >> 4;
-                    byte flags = (byte)(vagReader.ReadByte() & 0xF);
+                    sbyte shift_factor = (sbyte)((predict_shift & 0x0F) >> 0);
+                    sbyte predict_nr = (sbyte)((predict_shift & 0xF0) >> 4);
+                    byte flag = vagReader.ReadByte();
+                    byte[] s = vagReader.ReadBytes(VAG_SAMPLE_BYTES);
+                    //-----------------------------
 
-                    if (flags == (int)vag_flag.VAGF_END_MARKER_AND_SKIP)
+                    int[] unpacked_nibbles = new int[VAG_SAMPLE_NIBBL];
+
+                    if (flag == (int)Vag_flag.VAGF_END_MARKER_AND_SKIP)
                     {
-                        vagStream.Seek(14, SeekOrigin.Current);
-                        hist = 0;
-                        hist2 = 0;
-                        hist3 = 0;
-                        hist4 = 0;
+                        break;
                     }
-                    else
+
+                    /* swy: unpack one of the 28 'scale' 4-bit nibbles in the 28 bytes; two 'scales' in one byte */
+                    for (int j = 0; j < VAG_SAMPLE_BYTES; j++)
                     {
-                        for (int i = 0; i < VAG_SAMPLE_BYTES; i++)
+                        short sample_byte = s[j];
+
+                        unpacked_nibbles[j * 2] = (sample_byte & 0x0F) >> 0;
+                        unpacked_nibbles[j * 2 + 1] = (sample_byte & 0xF0) >> 4;
+                    }
+
+                    /* swy: decode each of the 14*2 ADPCM samples in this chunk */
+                    for (int j = 0; j < VAG_SAMPLE_NIBBL; j++)
+                    {
+                        /* swy: turn the signed nibble into a signed int first*/
+                        int scale = unpacked_nibbles[j] << 12;
+                        if (Convert.ToBoolean(scale & 0x8000))
                         {
-                            byte adpcmData = vagReader.ReadByte();
-                            int sampleFlags = adpcmData & 0xF;
-                            int coefficent;
-
-                            for (int ii = 0; ii <= 1; ii++)
-                            {
-                                if (sampleFlags > 7)
-                                {
-                                    sampleFlags -= 16;
-                                }
-
-                                if (predict < 128)
-                                {
-                                    coefficent = hist * vag_lut[predict, 0] + hist2 * vag_lut[predict, 1] + hist3 * vag_lut[predict, 2] + hist4 * vag_lut[predict, 3];
-                                }
-                                else
-                                {
-                                    coefficent = 0;
-                                }
-
-                                short sample = (short)(coefficent / 32 + (sampleFlags << 20 - shift) + 128 >> 8);
-                                pcmWriter.Write(sample);
-
-                                hist4 = hist3;
-                                hist3 = hist2;
-                                hist2 = hist;
-                                hist = sample;
-
-                                sampleFlags = adpcmData >> 4;
-                            }
+                            scale = (int)(scale | 0xFFFF0000);
                         }
+
+                        /* swy: don't overflow the LUT array access; limit the max allowed index */
+                        predict_nr = (sbyte)Math.Min(predict_nr, VAG_MAX_LUT_INDX);
+
+                        short sample = (short)((scale >> shift_factor) + (hist1 * vag_lut[predict_nr, 0] + hist2 * vag_lut[predict_nr, 1]) / 64);
+                        pcmWriter.Write(sample);
+
+                        /* swy: sliding window with the last two (preceding) decoded samples in the stream/file */
+                        hist2 = hist1;
+                        hist1 = sample;
                     }
                 }
+
                 pcmData = pcmStream.ToArray();
 
                 pcmWriter.Close();
@@ -235,7 +109,10 @@ namespace PS2_VAG_ENCODER_DECODER
                 vagReader.Close();
                 vagStream.Close();
             }
+
             return pcmData;
         }
     }
 }
+
+
