@@ -31,11 +31,9 @@ namespace PS2_VAG_ENCODER_DECODER
             using (WaveFileReader audioReader = new WaveFileReader(FilePath))
             {
                 //Get PCM Data
-                byte[] PCMdata = new byte[audioReader.Length];
-                audioReader.Read(PCMdata, 0, (int)audioReader.Length);
+                OutputPCMData = new byte[audioReader.Length];
+                audioReader.Read(OutputPCMData, 0, (int)audioReader.Length);
                 audioReader.Close();
-
-                OutputPCMData = PCMdata;
             }
 
             return OutputPCMData;

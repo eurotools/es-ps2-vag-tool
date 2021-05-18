@@ -63,13 +63,10 @@ namespace PS2_VAG_ENCODER_DECODER
                 {
                     VAGChunk chunk = new VAGChunk();
 
+                    // find_predict
                     double min = 1e10;
-
                     double[,] predictBuffer = new double[5, VAG_SAMPLE_NIBBL];
-
-                    int predict = 0;
-                    int shift = 0;
-
+                    int predict = 0, shift = 0;
                     double[] s1 = new double[5];
                     double[] s2 = new double[5];
 
@@ -115,31 +112,33 @@ namespace PS2_VAG_ENCODER_DECODER
                     factors[ch * 2] = s1[predict];
                     factors[ch * 2 + 1] = s2[predict];
 
+                    // find_shift
                     uint shiftMask;
 
                     for (shift = 0, shiftMask = 0x4000; shift < 12; shift++, shiftMask >>= 1)
                     {
-                        if ((shiftMask & ((int)min + (shiftMask >> 3))) == 0)
+                        if (Convert.ToBoolean(shiftMask & ((int)min + (shiftMask >> 3))))
                         {
                             break;
                         }
                     }
+                    // so shift==12 if none found...
 
                     chunk.shiftFactor = Convert.ToSByte(((predict << 4) & 0xF0) | (shift & 0xF));
                     chunk.flag = Convert.ToByte(numSamples - pos >= 28 ? 0 : 1);
 
+                    // pack
                     short[] outBuf = new short[VAG_SAMPLE_NIBBL];
 
                     for (int k = 0; k < VAG_SAMPLE_NIBBL; k++)
                     {
                         double s_double_trans = predictBuffer[predict, k] - factors2[ch * 2] * VAGLut[predict, 0] - factors2[ch * 2 + 1] * VAGLut[predict, 1];
                         // +0x800 for signed conversion??
-                        long sample = (((int)Math.Round(s_double_trans) << shift) + 0x800) & 0xFFFFF000;
+                        int sample = (int)((((int)Math.Round(s_double_trans) << shift) + 0x800) & 0xFFFFF000);
                         if (sample > 32767)
                         {
                             sample = 32767;
                         }
-
                         if (sample < -32768)
                         {
                             sample = -32768;
@@ -169,10 +168,10 @@ namespace PS2_VAG_ENCODER_DECODER
                 foreach (VAGChunk chunk in chunks)
                 {
                     writer.Write(chunk.shiftFactor);
+                    writer.Write(chunk.predictNR);
                     writer.Write(chunk.flag);
                     writer.Write(chunk.s);
                 }
-
                 outgoingData = memStream.ToArray();
 
                 writer.Close();
