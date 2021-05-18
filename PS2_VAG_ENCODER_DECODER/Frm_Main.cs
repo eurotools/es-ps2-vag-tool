@@ -48,6 +48,9 @@ namespace PS2_VAG_ENCODER_DECODER
 
         private void Button_Decode_Click(object sender, EventArgs e)
         {
+            if (string.IsNullOrEmpty(_fileToDecode))
+                return;
+
             _frequency = int.Parse(txtFrequency.Text);
             _samples = int.Parse(txtSamples.Text);
             _channels = int.Parse(txtChannels.Text);
@@ -73,6 +76,9 @@ namespace PS2_VAG_ENCODER_DECODER
 
         private void Button_Encode_Click(object sender, EventArgs e)
         {
+            if (string.IsNullOrEmpty(_fileToEncode))
+                return;
+
             // TODO!
         }
 

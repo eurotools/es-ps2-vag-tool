@@ -131,6 +131,8 @@ namespace PS2_VAG_ENCODER_DECODER
                 pcmWriter.Close();
                 pcmStream.Close();
                 vagReader.Close();
+
+                GC.Collect();
             }
             return pcmData;
         }

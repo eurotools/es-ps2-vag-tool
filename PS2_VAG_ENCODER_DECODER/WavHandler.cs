@@ -1,6 +1,5 @@
-﻿using NAudio.Wave;
+using NAudio.Wave;
 using System.IO;
-using System.Text;
 
 namespace PS2_VAG_ENCODER_DECODER
 {
