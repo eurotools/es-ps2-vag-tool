@@ -36,9 +36,7 @@ namespace PS2_VAG_ENCODER_DECODER
             this.label1 = new System.Windows.Forms.Label();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.label7 = new System.Windows.Forms.Label();
-            this.txtInterleave = new System.Windows.Forms.TextBox();
-            this.label9 = new System.Windows.Forms.Label();
+            this.Chbx_IsStereo = new System.Windows.Forms.CheckBox();
             this.txtChannels = new System.Windows.Forms.TextBox();
             this.label8 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
@@ -131,9 +129,7 @@ namespace PS2_VAG_ENCODER_DECODER
             // 
             // groupBox3
             // 
-            this.groupBox3.Controls.Add(this.label7);
-            this.groupBox3.Controls.Add(this.txtInterleave);
-            this.groupBox3.Controls.Add(this.label9);
+            this.groupBox3.Controls.Add(this.Chbx_IsStereo);
             this.groupBox3.Controls.Add(this.txtChannels);
             this.groupBox3.Controls.Add(this.label8);
             this.groupBox3.Controls.Add(this.label5);
@@ -149,30 +145,15 @@ namespace PS2_VAG_ENCODER_DECODER
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "File Parameters";
             // 
-            // label7
+            // Chbx_IsStereo
             // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(273, 43);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(33, 13);
-            this.label7.TabIndex = 10;
-            this.label7.Text = "Bytes";
-            // 
-            // txtInterleave
-            // 
-            this.txtInterleave.Location = new System.Drawing.Point(213, 40);
-            this.txtInterleave.Name = "txtInterleave";
-            this.txtInterleave.Size = new System.Drawing.Size(54, 20);
-            this.txtInterleave.TabIndex = 9;
-            // 
-            // label9
-            // 
-            this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(155, 43);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(57, 13);
-            this.label9.TabIndex = 8;
-            this.label9.Text = "Interleave:";
+            this.Chbx_IsStereo.AutoSize = true;
+            this.Chbx_IsStereo.Location = new System.Drawing.Point(161, 42);
+            this.Chbx_IsStereo.Name = "Chbx_IsStereo";
+            this.Chbx_IsStereo.Size = new System.Drawing.Size(68, 17);
+            this.Chbx_IsStereo.TabIndex = 8;
+            this.Chbx_IsStereo.Text = "Is Stereo";
+            this.Chbx_IsStereo.UseVisualStyleBackColor = true;
             // 
             // txtChannels
             // 
@@ -322,9 +303,7 @@ namespace PS2_VAG_ENCODER_DECODER
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.TextBox txtSamples;
         private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.TextBox txtInterleave;
-        private System.Windows.Forms.Label label9;
+        private System.Windows.Forms.CheckBox Chbx_IsStereo;
     }
 }
 
