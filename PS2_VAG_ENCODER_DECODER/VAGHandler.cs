@@ -56,8 +56,22 @@ namespace PS2_VAG_ENCODER_DECODER
             {
                 for (int ch = 0; ch < numberOfChannels; ch++)
                 {
+                    for (int j = 0; j < 5; j++)
+                    {
+                        for( int k = 0; k < VAG_SAMPLE_NIBBL; k++)
+                        {
+                            double sample = 0;
 
-
+                            if (sample > 30719.0)
+                            {
+                                sample = 30719.0;
+                            }
+                            if (sample < -30720.0)
+                            {
+                                sample = -30720.0;
+                            }
+                        }
+                    }
                 }
             }
             return null;
