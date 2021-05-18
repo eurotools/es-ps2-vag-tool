@@ -178,14 +178,12 @@ namespace PS2_VAG_ENCODER_DECODER
 
                 while (vagStream.Position < vagData.Length)
                 {
-                    byte decodingCoefficent = vagReader.ReadByte();
-                    int shiftBy = decodingCoefficent & 0xF;
-                    int predictNr = decodingCoefficent >> 0x4;
-                    byte loopData = vagReader.ReadByte();
-                    predictNr |= loopData & 0xF0;
-                    int loopFlag = loopData & 0xF;
+                    byte predict_shift = vagReader.ReadByte();
+                    int shift = (predict_shift & 0x0F) >> 0;
+                    int predict = (predict_shift & 0xF0) >> 4;
+                    byte flags = (byte)(vagReader.ReadByte() & 0xF);
 
-                    if (loopFlag == (int)vag_flag.VAGF_END_MARKER_AND_SKIP)
+                    if (flags == (int)vag_flag.VAGF_END_MARKER_AND_SKIP)
                     {
                         vagStream.Seek(14, SeekOrigin.Current);
                         hist = 0;
@@ -208,16 +206,16 @@ namespace PS2_VAG_ENCODER_DECODER
                                     sampleFlags -= 16;
                                 }
 
-                                if (predictNr < 128)
+                                if (predict < 128)
                                 {
-                                    coefficent = hist * vag_lut[predictNr, 0] + hist2 * vag_lut[predictNr, 1] + hist3 * vag_lut[predictNr, 2] + hist4 * vag_lut[predictNr, 3];
+                                    coefficent = hist * vag_lut[predict, 0] + hist2 * vag_lut[predict, 1] + hist3 * vag_lut[predict, 2] + hist4 * vag_lut[predict, 3];
                                 }
                                 else
                                 {
                                     coefficent = 0;
                                 }
 
-                                short sample = (short)(coefficent / 32 + (sampleFlags << 20 - shiftBy) + 128 >> 8);
+                                short sample = (short)(coefficent / 32 + (sampleFlags << 20 - shift) + 128 >> 8);
                                 pcmWriter.Write(sample);
 
                                 hist4 = hist3;
