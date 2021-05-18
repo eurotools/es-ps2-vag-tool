@@ -23,5 +23,46 @@ namespace PS2_VAG_ENCODER_DECODER
             MultiplexingWaveProvider waveProvider = new MultiplexingWaveProvider(new IWaveProvider[] { providerLeft, providerRight }, 2);
             WaveFileWriter.CreateWaveFile(filePath, waveProvider);
         }
+
+        internal static byte[] GetPCMDataFromWav(string FilePath)
+        {
+            byte[] OutputPCMData;
+
+            using (WaveFileReader audioReader = new WaveFileReader(FilePath))
+            {
+                //Get PCM Data
+                byte[] PCMdata = new byte[audioReader.Length];
+                audioReader.Read(PCMdata, 0, (int)audioReader.Length);
+                audioReader.Close();
+
+                OutputPCMData = PCMdata;
+            }
+
+            return OutputPCMData;
+        }
+
+        internal static short[] ConvertPCMDataToShortArray(byte[] PCMData)
+        {
+            short[] PCMDataShortArray;
+
+            using (MemoryStream MSPCMData = new MemoryStream(PCMData))
+            {
+                using (BinaryReader BReader = new BinaryReader(MSPCMData))
+                {
+                    PCMDataShortArray = new short[PCMData.Length / 2];
+
+                    //Get data
+                    for (int i = 0; i < PCMDataShortArray.Length; i++)
+                    {
+                        PCMDataShortArray[i] = BReader.ReadInt16();
+                    }
+
+                    //Close Reader
+                    BReader.Close();
+                }
+            }
+
+            return PCMDataShortArray;
+        }
     }
 }

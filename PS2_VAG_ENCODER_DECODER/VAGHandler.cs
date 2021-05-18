@@ -46,7 +46,7 @@ namespace PS2_VAG_ENCODER_DECODER
         //*===============================================================================================
         //* Encoding / Decoding Functions
         //*===============================================================================================
-        public static byte[] VAGEncoder(byte[] pcmData, int numberOfChannels, int bitsPerSample)
+        public static byte[] VAGEncoder(short[] pcmData, int numberOfChannels, int bitsPerSample)
         {
             int sampleSize = numberOfChannels * bitsPerSample / 8;
 
@@ -85,15 +85,21 @@ namespace PS2_VAG_ENCODER_DECODER
                             double sample = pcmData[k * numberOfChannels + ch];
 
                             if (sample > 30719.0)
+                            {
                                 sample = 30719.0;
+                            }
 
                             if (sample < -30720.0)
+                            {
                                 sample = -30720.0;
+                            }
 
                             predictBuffer[j, k] = sample - s1[j] * VAGLut[j, 0] - s2[j] * VAGLut[j, 1];
 
                             if (Math.Abs(predictBuffer[j, k]) > max)
+                            {
                                 max = Math.Abs(predictBuffer[j, k]);
+                            }
 
                             s2[j] = s1[j];
                             s1[j] = sample;
@@ -114,7 +120,9 @@ namespace PS2_VAG_ENCODER_DECODER
                     for (shift = 0, shiftMask = 0x4000; shift < 12; shift++, shiftMask >>= 1)
                     {
                         if ((shiftMask & ((int)min + (shiftMask >> 3))) == 0)
+                        {
                             break;
+                        }
                     }
 
                     chunk.shiftFactor = Convert.ToSByte(((predict << 4) & 0xF0) | (shift & 0xF));
@@ -122,15 +130,20 @@ namespace PS2_VAG_ENCODER_DECODER
 
                     short[] outBuf = new short[VAG_SAMPLE_NIBBL];
 
-                    for (var k = 0; k < VAG_SAMPLE_NIBBL; k++)
+                    for (int k = 0; k < VAG_SAMPLE_NIBBL; k++)
                     {
                         double s_double_trans = predictBuffer[predict, k] - factors2[ch * 2] * VAGLut[predict, 0] - factors2[ch * 2 + 1] * VAGLut[predict, 1];
                         // +0x800 for signed conversion??
-                        var sample = (((int)Math.Round(s_double_trans) << shift) + 0x800) & 0xFFFFF000;
+                        long sample = (((int)Math.Round(s_double_trans) << shift) + 0x800) & 0xFFFFF000;
                         if (sample > 32767)
+                        {
                             sample = 32767;
+                        }
+
                         if (sample < -32768)
+                        {
                             sample = -32768;
+                        }
 
                         outBuf[k] = (short)(sample >> 12);
                         factors2[ch * 2 + 1] = factors2[ch * 2];
@@ -139,8 +152,10 @@ namespace PS2_VAG_ENCODER_DECODER
 
                     chunk.s = new byte[VAG_SAMPLE_BYTES];
 
-                    for (var k = 0; k < VAG_SAMPLE_BYTES; k++)
+                    for (int k = 0; k < VAG_SAMPLE_BYTES; k++)
+                    {
                         chunk.s[k] = Convert.ToByte(((outBuf[k * 2 + 1] << 4) & 0xF0) | (outBuf[k * 2] & 0xF));
+                    }
 
                     chunks.Add(chunk);
                 }
@@ -148,8 +163,8 @@ namespace PS2_VAG_ENCODER_DECODER
 
             byte[] outgoingData;
 
-            using (var memStream = new MemoryStream())
-            using (var writer = new BinaryWriter(memStream))
+            using (MemoryStream memStream = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(memStream))
             {
                 foreach (VAGChunk chunk in chunks)
                 {
@@ -241,20 +256,6 @@ namespace PS2_VAG_ENCODER_DECODER
                 GC.Collect();
             }
             return pcmData;
-        }
-
-        internal static void CreateVAGFile(byte[] pcmData, string filePath)
-        {
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            using (var writer = new BinaryWriter(stream))
-            {
-                writer.Write(pcmData);
-
-                writer.Close();
-                stream.Close();
-
-                GC.Collect();
-            }
         }
 
         //*===============================================================================================

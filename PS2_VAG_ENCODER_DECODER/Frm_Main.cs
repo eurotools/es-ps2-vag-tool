@@ -43,44 +43,45 @@ namespace PS2_VAG_ENCODER_DECODER
 
         private void Button_Decode_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(_fileToDecode))
-                return;
-
-            _frequency = int.Parse(txtFrequency.Text);
-            _samples = int.Parse(txtSamples.Text);
-            _channels = int.Parse(txtChannels.Text);
-
-            // TODO: Allow the user to select the output path
-            string fileName = $"{Path.GetFileNameWithoutExtension(_fileToDecode)}.wav";
-            string filePath = $"{Application.StartupPath}\\{fileName}";
-
-            if (_channels == 2)
+            if (!string.IsNullOrEmpty(_fileToDecode))
             {
-                byte[] LeftChannelData = VAGHandler.VAGDecoder(VAGHandler.SplitVAGChannels(_fileToDecode, true));
-                byte[] RightChannelData = VAGHandler.VAGDecoder(VAGHandler.SplitVAGChannels(_fileToDecode, false));
-                WavHandler.CreateWavFileStereo(_frequency, _samples, LeftChannelData, RightChannelData, filePath);
+                _frequency = int.Parse(txtFrequency.Text);
+                _samples = int.Parse(txtSamples.Text);
+                _channels = int.Parse(txtChannels.Text);
+
+                // TODO: Allow the user to select the output path
+                string fileName = $"{Path.GetFileNameWithoutExtension(_fileToDecode)}.wav";
+                string filePath = $"{Application.StartupPath}\\{fileName}";
+
+                if (_channels == 2)
+                {
+                    byte[] LeftChannelData = VAGHandler.VAGDecoder(VAGHandler.SplitVAGChannels(_fileToDecode, true));
+                    byte[] RightChannelData = VAGHandler.VAGDecoder(VAGHandler.SplitVAGChannels(_fileToDecode, false));
+                    WavHandler.CreateWavFileStereo(_frequency, _samples, LeftChannelData, RightChannelData, filePath);
+                }
+                else
+                {
+                    byte[] pcmData = VAGHandler.VAGDecoder(File.ReadAllBytes(_fileToDecode));
+                    WavHandler.CreateWavFile(_frequency, _samples, _channels, pcmData, filePath);
+                }
+                MessageBox.Show($"Exported WAV file to: {filePath}");
             }
-            else
-            {
-                byte[] pcmData = VAGHandler.VAGDecoder(File.ReadAllBytes(_fileToDecode));
-                WavHandler.CreateWavFile(_frequency, _samples, _channels, pcmData, filePath);
-            }
-            MessageBox.Show($"Exported WAV file to: {filePath}");
         }
 
         private void Button_Encode_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(_fileToEncode))
-                return;
+            if (!string.IsNullOrEmpty(_fileToEncode))
+            {
+                // TODO: Allow the user to select the output path
+                string fileName = $"{Path.GetFileNameWithoutExtension(_fileToEncode)}.VAG";
+                string filePath = $"{Application.StartupPath}\\{fileName}";
 
-            // TODO: Allow the user to select the output path
-            string fileName = $"{Path.GetFileNameWithoutExtension(_fileToEncode)}.VAG";
-            string filePath = $"{Application.StartupPath}\\{fileName}";
+                short[] PCMData = WavHandler.ConvertPCMDataToShortArray(WavHandler.GetPCMDataFromWav(_fileToEncode));
+                byte[] vagData = VAGHandler.VAGEncoder(PCMData, _channels, _samples);
+                File.WriteAllBytes(filePath, vagData);
 
-            byte[] pcmData = VAGHandler.VAGEncoder(File.ReadAllBytes(_fileToEncode), _channels, _samples);
-            VAGHandler.CreateVAGFile(pcmData, filePath);
-
-            MessageBox.Show($"Exported VAG file to: {filePath}");
+                MessageBox.Show($"Exported VAG file to: {filePath}");
+            }
         }
 
         //*===============================================================================================
