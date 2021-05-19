@@ -84,9 +84,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Includes\psxsdk.dll">
+    <None Include="..\psxsdk\Debug\psxsdk.dll">
+      <Link>Includes\%(RecursiveDir)/%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
