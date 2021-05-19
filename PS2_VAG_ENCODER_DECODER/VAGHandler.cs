@@ -243,7 +243,7 @@ namespace PS2_VAG_ENCODER_DECODER
 
             for (int i = 0; i < 28; i++)
             {
-                d_samples[i] = buffer[i][predict_nr];
+                d_samples[i] = buffer[i,predict_nr];
             }
 
             min2 = (int)min;
