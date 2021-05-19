@@ -48,139 +48,79 @@ namespace PS2_VAG_ENCODER_DECODER
         //*===============================================================================================
         public static byte[] VAGEncoder(short[] pcmData, int numberOfChannels, int bitsPerSample)
         {
-            int sampleSize = numberOfChannels * bitsPerSample / 8;
+            byte[] VAGData = null;
+            int sample_len = 0;
+            int size = 0;
+            int flags;
+            int predict_nr;
+            int shift_factor;
+            short sample_size = 0;
+            short[] wave = new short[pcmData.Length];
+            double[] d_samples = new double[28];
+            short[] four_bit = new short[28];
+            byte c;
+            byte d;
 
-            // size compression is 28 16-bit samples -> 16 bytes
-            int numSamples = pcmData.Length / sampleSize;
-            double[] factors = new double[sizeof(double)];
-            double[] factors2 = new double[sizeof(double)];
 
-            List<VAGChunk> chunks = new List<VAGChunk>();
-
-            for (int pos = 0; pos < numSamples; pos += VAG_SAMPLE_NIBBL)
+            for (int arraySample = 0; arraySample < pcmData.Length; arraySample++)
             {
-                for (int ch = 0; ch < numberOfChannels; ch++)
+                if (sample_size == 8)
                 {
-                    VAGChunk chunk = new VAGChunk();
-
-                    // find_predict
-                    double min = 1e10;
-                    double[,] predictBuffer = new double[5, VAG_SAMPLE_NIBBL];
-                    int predict = 0, shift = 0;
-                    double[] s1 = new double[5];
-                    double[] s2 = new double[5];
-
-                    for (int j = 0; j < 5; j++)
+                    for (int i = 0; i < size; i++)
                     {
-                        double max = 0;
+                        c = fgetc(fp);
+                        wave[i] = c;
+                        wave[i] ^= 0x80;
+                        wave[i] <<= 8;
+                    }
+                }
+                else
+                {
+                    // fread( wave, sizeof( short ), size, fp );
+                    for (int i = 0; i < size; i++)
+                    {
+                        wave[i] = pcmData[arraySample];
+                    }
+                }
 
-                        s1[j] = factors[ch * 2];
-                        s2[j] = factors[ch * 2 + 1];
+                int calc_size = size / 28;
+                if (Convert.ToBoolean(size % 28))
+                {
+                    for (int j = size % 28; j < 28; j++)
+                    {
+                        wave[28 * calc_size + j] = 0;
+                    }
+                    calc_size++;
+                }
 
-                        for (int k = 0; k < VAG_SAMPLE_NIBBL; k++)
-                        {
-                            double sample = pcmData[k * numberOfChannels + ch];
-
-                            if (sample > 30719.0)
-                            {
-                                sample = 30719.0;
-                            }
-
-                            if (sample < -30720.0)
-                            {
-                                sample = -30720.0;
-                            }
-
-                            predictBuffer[j, k] = sample - s1[j] * VAGLut[j, 0] - s2[j] * VAGLut[j, 1];
-
-                            if (Math.Abs(predictBuffer[j, k]) > max)
-                            {
-                                max = Math.Abs(predictBuffer[j, k]);
-                            }
-
-                            s2[j] = s1[j];
-                            s1[j] = sample;
-                        }
-
-                        if (max < min)
-                        {
-                            min = max;
-                            predict = j;
-                        }
+                for (int j = 0; j < calc_size; j++)
+                {                                     // pack 28 samples
+                    ptr = wave + j * 28;
+                    find_predict(pcmData, d_samples, predict_nr, shift_factor);
+                    pack(d_samples, four_bit, predict_nr, shift_factor);
+                    d = (predict_nr << 4) | shift_factor;
+                    fputc(d, vag);
+                    fputc(flags, vag);
+                    for (int k = 0; k < 28; k += 2)
+                    {
+                        d = ((four_bit[k + 1] >> 8) & 0xf0) | ((four_bit[k] >> 12) & 0xf);
+                        fputc(d, vag);
+                    }
+                    sample_len -= 28;
+                    if (sample_len < 28 && enable_looping == 0)
+                    {
+                        flags = 1;
                     }
 
-                    factors[ch * 2] = s1[predict];
-                    factors[ch * 2 + 1] = s2[predict];
-
-                    // find_shift
-                    uint shiftMask;
-
-                    for (shift = 0, shiftMask = 0x4000; shift < 12; shift++, shiftMask >>= 1)
+                    if (enable_looping)
                     {
-                        if (Convert.ToBoolean(shiftMask & ((int)min + (shiftMask >> 3))))
-                        {
-                            break;
-                        }
+                        flags = 2;
                     }
-                    // so shift==12 if none found...
-
-                    chunk.shiftFactor = Convert.ToSByte(((predict << 4) & 0xF0) | (shift & 0xF));
-                    chunk.flag = Convert.ToByte(numSamples - pos >= 28 ? 0 : 1);
-
-                    // pack
-                    short[] outBuf = new short[VAG_SAMPLE_NIBBL];
-
-                    for (int k = 0; k < VAG_SAMPLE_NIBBL; k++)
-                    {
-                        double s_double_trans = predictBuffer[predict, k] - factors2[ch * 2] * VAGLut[predict, 0] - factors2[ch * 2 + 1] * VAGLut[predict, 1];
-                        // +0x800 for signed conversion??
-                        int sample = (int)((((int)Math.Round(s_double_trans) << shift) + 0x800) & 0xFFFFF000);
-                        if (sample > 32767)
-                        {
-                            sample = 32767;
-                        }
-                        if (sample < -32768)
-                        {
-                            sample = -32768;
-                        }
-
-                        outBuf[k] = (short)(sample >> 12);
-                        factors2[ch * 2 + 1] = factors2[ch * 2];
-                        factors2[ch * 2] = (sample >> shift) - s_double_trans;
-                    }
-
-                    chunk.s = new byte[VAG_SAMPLE_BYTES];
-
-                    for (int k = 0; k < VAG_SAMPLE_BYTES; k++)
-                    {
-                        chunk.s[k] = Convert.ToByte(((outBuf[k * 2 + 1] << 4) & 0xF0) | (outBuf[k * 2] & 0xF));
-                    }
-
-                    chunks.Add(chunk);
                 }
             }
 
-            byte[] outgoingData;
 
-            using (MemoryStream memStream = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(memStream))
-            {
-                foreach (VAGChunk chunk in chunks)
-                {
-                    writer.Write(chunk.shiftFactor);
-                    writer.Write(chunk.predictNR);
-                    writer.Write(chunk.flag);
-                    writer.Write(chunk.s);
-                }
-                outgoingData = memStream.ToArray();
-
-                writer.Close();
-                memStream.Close();
-
-                GC.Collect();
-            }
-
-            return outgoingData;
+            return VAGData;
         }
 
         private static void find_predict(short[] samples, double[] d_samples, int predict_nr, int shift_factor)
