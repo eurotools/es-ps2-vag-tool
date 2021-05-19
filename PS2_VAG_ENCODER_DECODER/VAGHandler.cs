@@ -183,6 +183,116 @@ namespace PS2_VAG_ENCODER_DECODER
             return outgoingData;
         }
 
+        private static void find_predict(short[] samples, double[] d_samples, int predict_nr, int shift_factor)
+        {
+            double [,]buffer = new double[28,5];
+            double min = 1e10;
+            double [] max = new double[5];
+            double ds;
+            int min2;
+            int shift_mask;
+            double _s_1 = 0.0;                            // s[t-1]
+            double _s_2 = 0.0;                            // s[t-2]
+            double s_0, s_1 = 0, s_2 = 0;
+
+            for (int i = 0; i < 5; i++)
+            {
+                max[i] = 0.0;
+                s_1 = _s_1;
+                s_2 = _s_2;
+                for (int j = 0; j < VAG_SAMPLE_NIBBL; j++)
+                {
+                    s_0 = samples[j];                      // s[t-0]
+                    if (s_0 > 30719.0)
+                    {
+                        s_0 = 30719.0;
+                    }
+
+                    if (s_0 < -30720.0)
+                    {
+                        s_0 = -30720.0;
+                    }
+
+                    ds = s_0 + s_1 * VAGLut[i,0] + s_2 * VAGLut[i,1];
+                    buffer[j,i] = ds;
+                    if (Math.Abs(ds) > max[i])
+                    {
+                        max[i] = Math.Abs(ds);
+                    }
+
+                    s_2 = s_1;                                  // new s[t-2]
+                    s_1 = s_0;                                  // new s[t-1]
+                }
+
+                if (max[i] < min)
+                {
+                    min = max[i];
+                    predict_nr = i;
+                }
+                if (min <= 7)
+                {
+                    predict_nr = 0;
+                    break;
+                }
+            }
+
+            // store s[t-2] and s[t-1] in a static variable
+            // these than used in the next function call
+            _s_1 = s_1;
+            _s_2 = s_2;
+
+            for (int i = 0; i < 28; i++)
+            {
+                d_samples[i] = buffer[i][predict_nr];
+            }
+
+            min2 = (int)min;
+            shift_mask = 0x4000;
+            shift_factor = 0;
+
+            while (shift_factor < 12)
+            {
+                if (Convert.ToBoolean(shift_mask & (min2 + (shift_mask >> 3))))
+                {
+                    break;
+                } (shift_factor)++;
+                shift_mask = shift_mask >> 1;
+            }
+        }
+
+        private static void pack(double[] d_samples, short[] four_bit, int predict_nr, int shift_factor)
+        {
+            double ds;
+            int di;
+            double s_0;
+            double s_1 = 0.0;
+            double s_2 = 0.0;
+
+            for (int i = 0; i < 28; i++)
+            {
+                s_0 = d_samples[i] + s_1 * VAGLut[predict_nr,0] + s_2 * VAGLut[predict_nr,1];
+                ds = s_0 * (1 << shift_factor);
+
+                di = (int)(((int)ds + 0x800) & 0xfffff000);
+
+                if (di > 32767)
+                {
+                    di = 32767;
+                }
+
+                if (di < -32768)
+                {
+                    di = -32768;
+                }
+
+                four_bit[i] = (short)di;
+
+                di = di >> shift_factor;
+                s_2 = s_1;
+                s_1 = di - s_0;
+            }
+        }
+
         public static byte[] VAGDecoder(byte[] vagData)
         {
             byte[] pcmData;
