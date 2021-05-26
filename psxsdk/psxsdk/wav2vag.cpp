@@ -6,8 +6,6 @@
  *
  */
 
-#include "pch.h"
-
 #include <string>
 #include <stdio.h>
 #include <string.h>
@@ -19,10 +17,12 @@
 #include "endian.h"
 
 #define BUFFER_SIZE 128*28
+
 short wave[BUFFER_SIZE];
 
-int get_vag_file(const char* in_file, const char* out_file, int in_sample_freq)
+WAV2VAG_API int get_vag_file(const char* in_file, const char* out_file, int in_sample_freq)
 {
+    printf("Welcome to get_vag_file \n");
     FILE* fp, * vag;
     short* ptr;
     double d_samples[28];
@@ -33,13 +33,9 @@ int get_vag_file(const char* in_file, const char* out_file, int in_sample_freq)
     int size;
     int i, j, k;
     unsigned char d;
-    char s[4];
-    int chunk_data;
-    short e;
     int sample_freq = 0, sample_len;
-    char internal_name[16];
     int enable_looping = 0;
-    int raw_output = 0;
+    int raw_output = 1;
     int sraw = 0;
     short sample_size;
     unsigned char c;
@@ -60,94 +56,6 @@ int get_vag_file(const char* in_file, const char* out_file, int in_sample_freq)
 
     if (sraw == 1)
         goto convert_to_vag;
-
-    fread(s, 1, 4, fp);
-    if (strncmp(s, "RIFF", 4))
-    {
-        printf("%s is not in WAV format\n", in_file);
-        return -3;
-    }
-
-    fseek(fp, 8, SEEK_SET);
-    fread(s, 1, 4, fp);
-
-    if (strncmp(s, "WAVE", 4))
-    {
-        printf("%s is not in WAV format\n", in_file);
-        return -3;
-    }
-
-    fseek(fp, 8 + 4, SEEK_SET);
-    fread(s, 1, 4, fp);
-
-    if (strncmp(s, "fmt", 3))
-    {
-        printf("%s is not in WAV format\n", in_file);
-        return -3;
-    }
-
-    // fread(&chunk_data, sizeof(int), 1, fp); 
-    chunk_data = read_le_dword(fp);
-    chunk_data += ftell(fp);
-
-    //  fread(&e, 2, 1, fp);
-    e = read_le_word(fp);
-
-    if (e != 1)
-    {
-        printf("No PCM found in %s. Aborting.\n", in_file);
-        return -4;
-    }
-
-    //    fread(&e, 2, 1, fp);
-    e = read_le_word(fp);
-
-    if (e != 1)
-    {
-        //printf( "must be MONO\n" );
-        printf("WAV file must have only one channel. Aborting.\n");
-        return -5;
-    }
-
-    if (sample_freq != 0)
-        fseek(fp, 4, SEEK_CUR);
-    else
-        //fread(&sample_freq, 4, 1, fp);
-        sample_freq = read_le_dword(fp);
-
-    fseek(fp, 4 + 2, SEEK_CUR);
-
-    //    fread(&sample_size, 2, 1, fp);
-    sample_size = read_le_word(fp);
-
-    /*   if (e!=16)
-       {
-           //printf( "only 16 bit samples\n" );
-       printf("The size of the samples of the WAV file must be 16-bit."
-              "Aborting.\n");
-           return -6;
-       }*/
-
-    fseek(fp, chunk_data, SEEK_SET);
-
-    fread(s, 1, 4, fp);
-
-    if (strncmp(s, "data", 4))
-    {
-        printf("No data chunk in %s. Aborting.\n", in_file);
-        return -7;
-    }
-
-    // fread(&sample_len, 4, 1, fp);
-    sample_len = read_le_dword(fp);
-
-    if (sample_size == 16)
-        sample_len /= 2;
-
-    /*strcpy( fname, argv[1] );
-    p = strrchr( fname, '.' );
-    p++;
-    strcpy( p, "vag" );*/
 convert_to_vag:
     vag = fopen(out_file, "wb");
 
@@ -157,40 +65,25 @@ convert_to_vag:
         return -8;
     }
 
-    /*	strcpy(internal_name, "PSXSDK");
+    //if (raw_output == 0)
+    //{
+    //    fprintf(vag, "VAGp");             // ID
+    //    fputi(0x20, vag);                 // Version
+    //    fputi(0x00, vag);                 // Reserved
+    //    size = sample_len / 28;
+    //    if (sample_len % 28)
+    //        size++;
+    //    fputi(16 * (size + 2), vag);    // Data size
+    //    fputi(sample_freq, vag);          // Sampling frequency
 
-            for(i = 3; i < argc; i++)
-        {
-            if(strcmp(argv[i], "-L") == 0)
-                enable_looping = 1;
+    //    for (i = 0; i < 12; i++)          // Reserved
+    //        fputc(0, vag);
 
-            if(strncmp(argv[i], "-name=",6) == 0)
-                strncpy(internal_name, argv[i]+6, 15);
+    //    fwrite(internal_name, sizeof(char), 16, vag);
 
-            if(strcmp(argv[i], "-raw") == 0)
-                raw_output = 1;
-        }
-    */
-
-    if (raw_output == 0)
-    {
-        fprintf(vag, "VAGp");             // ID
-        fputi(0x20, vag);                 // Version
-        fputi(0x00, vag);                 // Reserved
-        size = sample_len / 28;
-        if (sample_len % 28)
-            size++;
-        fputi(16 * (size + 2), vag);    // Data size
-        fputi(sample_freq, vag);          // Sampling frequency
-
-        for (i = 0; i < 12; i++)          // Reserved
-            fputc(0, vag);
-
-        fwrite(internal_name, sizeof(char), 16, vag);
-
-        for (i = 0; i < 16; i++)
-            fputc(0, vag);                // ???
-    }
+    //    for (i = 0; i < 16; i++)
+    //        fputc(0, vag);                // ???
+    //}
 
     if (enable_looping)
         flags = 6;
@@ -214,7 +107,9 @@ convert_to_vag:
         {
             // fread( wave, sizeof( short ), size, fp );
             for (i = 0; i < size; i++)
+            {
                 wave[i] = read_le_word(fp);
+            }
         }
 
         i = size / 28;
@@ -330,7 +225,9 @@ void find_predict(short* samples, double* d_samples, int* predict_nr, int* shift
 
     while (*shift_factor < 12) {
         if (shift_mask & (min2 + (shift_mask >> 3)))
+        {
             break;
+        }
         (*shift_factor)++;
         shift_mask = shift_mask >> 1;
     }

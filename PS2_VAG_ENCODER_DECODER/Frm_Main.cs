@@ -75,10 +75,14 @@ namespace PS2_VAG_ENCODER_DECODER
                 // TODO: Allow the user to select the output path
                 string fileName = $"{Path.GetFileNameWithoutExtension(_fileToEncode)}.VAG";
                 string filePath = $"{Application.StartupPath}\\{fileName}";
+                byte[] vagData = null;
 
                 var t = ExternalCHelper.get_vag_file(_fileToEncode, filePath, _frequency);
 
-                //short[] PCMData = WavHandler.ConvertPCMDataToShortArray(WavHandler.GetPCMDataFromWav(_fileToEncode));
+                //vagData = VAGHandler.Test(File.ReadAllBytes(_fileToEncode), _samples, _frequency);
+                //File.WriteAllBytes(filePath, vagData);
+
+                short[] PCMData = WavHandler.ConvertPCMDataToShortArray(WavHandler.GetPCMDataFromWav(_fileToEncode));
                 ////byte[] vagData = VAGHandler.VAGEncoder(PCMData, _channels, _samples);
                 //File.WriteAllBytes(filePath, vagData);
 
