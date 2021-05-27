@@ -10,9 +10,9 @@ namespace PS2_VAG_ENCODER_DECODER
         private string _fileToEncode = "";
 
         // These defaults relate to the Sphinx audio files
-        private int _frequency = 22050;
+        private int _frequency = 44100;
         private int _samples = 16;
-        private int _channels = 2;
+        private int _channels = 1;
 
         public Frm_Main()
         {
@@ -75,16 +75,11 @@ namespace PS2_VAG_ENCODER_DECODER
                 // TODO: Allow the user to select the output path
                 string fileName = $"{Path.GetFileNameWithoutExtension(_fileToEncode)}.VAG";
                 string filePath = $"{Application.StartupPath}\\{fileName}";
-                byte[] vagData = null;
 
-                var t = ExternalCHelper.get_vag_file(_fileToEncode, filePath, _frequency);
-
-                //vagData = VAGHandler.Test(File.ReadAllBytes(_fileToEncode), _samples, _frequency);
-                //File.WriteAllBytes(filePath, vagData);
 
                 short[] PCMData = WavHandler.ConvertPCMDataToShortArray(WavHandler.GetPCMDataFromWav(_fileToEncode));
-                ////byte[] vagData = VAGHandler.VAGEncoder(PCMData, _channels, _samples);
-                //File.WriteAllBytes(filePath, vagData);
+                byte[] vagData = VAGHandler.VAGEncoder(PCMData, 16);
+                File.WriteAllBytes(filePath, vagData);
 
                 MessageBox.Show($"Exported VAG file to: {filePath}");
             }

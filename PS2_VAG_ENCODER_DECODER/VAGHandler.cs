@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace PS2_VAG_ENCODER_DECODER
 {
@@ -10,7 +9,7 @@ namespace PS2_VAG_ENCODER_DECODER
         //*===============================================================================================
         //* Definitions and Classes
         //*===============================================================================================
-        private static int[,] VAGLut = new int[,]
+        private static double[,] VAGLut = new double[,]
         {
             {   0,   0 },
             {  60,   0 },
@@ -24,6 +23,13 @@ namespace PS2_VAG_ENCODER_DECODER
             public sbyte shiftFactor;
             public sbyte predictNR; /* swy: reversed nibbles due to little-endian */
             public byte flag;
+            public byte[] s;
+        };
+
+        private struct VAGStruct
+        {
+            public byte predict_shift;	// upper 4 bits = predict, lower 4 bits = shift
+            public byte flag; // 0 or 7 (end)
             public byte[] s;
         };
 
@@ -44,230 +50,168 @@ namespace PS2_VAG_ENCODER_DECODER
         private static int VAG_SAMPLE_BYTES = 14;
         private static int VAG_SAMPLE_NIBBL = VAG_SAMPLE_BYTES * 2;
 
-        private static int BUFFER_SIZE = 128*28;
-
         //*===============================================================================================
         //* Encoding / Decoding Functions
         //*===============================================================================================
-
-        public static byte[] Test(byte[] vagData, int sampleSize, int sampleFreq)
+        public static byte[] VAGEncoder(short[] pcmData, int bitDepth)
         {
-            byte[] pcmData;
+            byte[] vagDat;
+            const int numChannels = 1;
 
-            using (MemoryStream memoryStream = new MemoryStream(vagData))
-            using (BinaryReader vagReader = new BinaryReader(memoryStream))
-            using (MemoryStream pcmStream = new MemoryStream())
-            using (BinaryWriter pcmWriter = new BinaryWriter(pcmStream))
+            // size compression is 28 16-bit samples -> 16 bytes
+            int s2size = pcmData.Length * numChannels * bitDepth / 8;
+            int sampleSize = (numChannels * bitDepth) / 8;
+
+            uint numSamples = ((uint)(s2size / sampleSize));
+
+            //int wavBufSize = 28 * (bitDepth / 8) * numChannels;
+            int wavBufSize = 28;
+            short[] wavBuf = new short[wavBufSize];
+            double[] factors = new double[numChannels * 2 + sizeof(double)];
+            double[] factors2 = new double[numChannels * 2 + sizeof(double)];
+
+            //Clone array
+            using (MemoryStream VagFile = new MemoryStream())
             {
-                var sampleLen = vagData.Length / 2; // Should this be div 2 ?
-                byte flags = 0;
-                var size = 0;
-
-                short[] wave = new short[BUFFER_SIZE];
-                
-                var i = 0;
-                var j = 0;
-                var k = 0;
-                
-                double[] d_samples = new double[28];
-                short[] four_bit = new short[28];
-
-                short[] ptr = new short[28];
-                short predict_nr = 0;
-                short shift_factor = 0;
-                sbyte d;
-
-                bool enableLooping = false;
-
-                flags = enableLooping ? (byte)6 : (byte)0;
-
-                while (sampleLen > 0)
+                using (BinaryWriter vagWriter = new BinaryWriter(VagFile))
                 {
-                    size = (sampleLen >= BUFFER_SIZE) ? BUFFER_SIZE : sampleLen;
+                    List<VAGStruct> ChunksList = new List<VAGStruct>();
 
-                    if (sampleSize == 8)
+                    for (int pos = 0; pos < numSamples; pos += VAG_SAMPLE_NIBBL)
                     {
-                        for (i = 0; i < size; i++)
+                        for (int buff = 0; buff < wavBufSize; buff++)
                         {
-                            short c = vagReader.ReadInt16();
-                            wave[i] = c;
-                            wave[i] ^= 0x80;
-                            wave[i] <<= 8;
+                            int index = pos + buff;
+                            if (index < pcmData.Length)
+                            {
+                                wavBuf[buff] = pcmData[index];
+                            }
+                            else
+                            {
+                                wavBuf[buff] = 0;
+                            }
+                        }
+
+                        for (int ch = 0; ch < numChannels; ch++)
+                        {
+                            //Put the data into the struct
+                            VAGStruct VAGstruct = new VAGStruct
+                            {
+                                s = new byte[VAG_SAMPLE_BYTES]
+                            };
+
+                            // find_predict
+                            double min = 1e10;
+                            double[,] predictBuf = new double[5, 28];
+                            int predict = 0, shift = 0; // prevent gcc warnings
+                            double[] s1 = new double[5];
+                            double[] s2 = new double[5];
+
+                            for (int j = 0; j < 5; j++)
+                            {
+                                double max = 0;
+
+                                s1[j] = factors[ch * 2];
+                                s2[j] = factors[ch * 2 + 1];
+                                for (int k = 0; k < VAG_SAMPLE_NIBBL; k++)
+                                {
+                                    double sample = wavBuf[k * numChannels + ch];
+
+                                    if (sample > 30719.0)
+                                    {
+                                        sample = 30719.0;
+                                    }
+
+                                    if (sample < -30720.0)
+                                    {
+                                        sample = -30720.0;
+                                    }
+
+                                    predictBuf[j, k] = sample - s1[j] * (VAGLut[j, 0] / 64) - s2[j] * (VAGLut[j, 1] / 64);
+                                    if (Math.Abs(predictBuf[j, k]) > max)
+                                    {
+                                        max = Math.Abs(predictBuf[j, k]);
+                                    }
+                                    s2[j] = s1[j];
+                                    s1[j] = sample;
+                                }
+                                if (max < min)
+                                {
+                                    min = max;
+                                    predict = j;
+                                }
+                            }
+                            factors[ch * 2] = s1[predict];
+                            factors[ch * 2 + 1] = s2[predict];
+
+                            // find_shift
+                            uint shiftMask;
+
+                            for (shift = 0, shiftMask = 0x4000; shift < 12; shift++, shiftMask >>= 1)
+                            {
+                                if (Convert.ToBoolean(shiftMask & ((int)min + (shiftMask >> 3))))
+                                {
+                                    break;
+                                }
+                            }
+
+                            // so shift==12 if none found...
+                            VAGstruct.predict_shift = (byte)(((predict << 4) & 0xF0) | (shift & 0xF));
+                            VAGstruct.flag = ((byte)(numSamples - pos >= 28 ? 0 : 1));
+
+                            sbyte[] outBuf = new sbyte[28];
+
+                            for (int k = 0; k < VAG_SAMPLE_NIBBL; k++)
+                            {
+                                double s_double_trans = predictBuf[predict,k] - factors2[ch * 2] * (VAGLut[predict, 0] / 64) - factors2[ch * 2 + 1] * (VAGLut[predict,1] / 64);
+                                int sample = (int)(((((int)Math.Round(s_double_trans)) << shift) + 0x800) & 0xFFFFF000);
+                                if (sample > 32767)
+                                {
+                                    sample = 32767;
+                                }
+
+                                if (sample < -32768)
+                                {
+                                    sample = -32768;
+                                }
+
+                                outBuf[k] = (sbyte)(sample >> 12);
+                                factors2[ch * 2 + 1] = factors2[ch * 2];
+                                factors2[ch * 2] = (double)(sample >> shift) - s_double_trans;
+                            }
+
+                            for (int k = 0; k < VAG_SAMPLE_BYTES; k++)
+                            {
+                                VAGstruct.s[k] = Convert.ToByte(((outBuf[k * 2 + 1] << 4) & 0xF0) | (outBuf[k * 2] & 0xF));
+                            }
+                            ChunksList.Add(VAGstruct);
                         }
                     }
-                    else
+                    // put terminating chunk
+                    VAGStruct endChunk = new VAGStruct
                     {
-                        // fread( wave, sizeof( short ), size, fp );
-                        for (i = 0; i < size; i++)
-                            wave[i] = read_le_word(vagReader);
-                    }
+                        predict_shift = 0,
+                        flag = 7,
+                        s = new byte[VAG_SAMPLE_BYTES]
+                    };
+                    ChunksList.Add(endChunk);
 
-                    i = size / 28;
-                    if (Convert.ToBoolean(size % 28))
+                    foreach (VAGStruct chunk in ChunksList)
                     {
-                        for (j = size % 28; j < 28; j++)
-                            wave[28 * i + j] = 0;
-                        i++;
+                        vagWriter.Write(chunk.predict_shift);
+                        vagWriter.Write(chunk.flag);
+                        vagWriter.Write(chunk.s);
                     }
-
-                    for (j = 0; j < i; j++)
-                    {                                     // pack 28 samples
-                        Array.Copy(wave, j, ptr, 0, 28);
-                        //ptr = wave[j * 28];
-
-                        find_predict(ref ptr, ref d_samples, ref predict_nr, ref shift_factor);
-                        pack(ref d_samples, ref four_bit, predict_nr, shift_factor);
-
-                        var gg = (char)((predict_nr << 4) | shift_factor);
-                        pcmWriter.Write(gg);
-                        pcmWriter.Write(flags);
-                        
-                        for (k = 0; k < 28; k += 2)
-                        {
-                            pcmWriter.Write(Convert.ToChar(((four_bit[k + 1] >> 8) & 0xf0) | ((four_bit[k] >> 12) & 0xf)));
-                        }
-                        
-                        sampleLen -= 28;
-
-                        if (sampleLen < 28 && enableLooping)
-                            flags = 1;
-
-                        if (enableLooping)
-                            flags = 2;
-                    }
+                    vagWriter.Close();
                 }
 
-                for (i = 0; i < 14; i++)
-                    pcmWriter.Write(0);
-
-                pcmData = pcmStream.ToArray();
-
-                pcmWriter.Close();
-                pcmStream.Close();
-                vagReader.Close();
-                memoryStream.Close();
-
-                GC.Collect();
+                vagDat = VagFile.ToArray();
+                VagFile.Close();
             }
 
-            return pcmData;
+            return vagDat;
         }
 
-        static short read_le_word(BinaryReader reader)
-        {
-            short i;
-            byte c = reader.ReadByte();
-            i = Convert.ToInt16(c);
-            c = reader.ReadByte();
-            i |= Convert.ToInt16(unchecked((short)(c << 8)));
-
-            return i;
-        }
-
-        static void find_predict(ref short[] samples, ref double[] d_samples, ref short predict_nr, ref short shift_factor)
-        {
-            short i, j;
-            double[,] buffer = new double[28 ,5];
-            double min = 1e10;
-            double[] max = new double[5];
-            double ds;
-            uint min2;
-            uint shift_mask;
-            double _s_1 = 0.0;                            // s[t-1]
-            double _s_2 = 0.0;                            // s[t-2]
-            double s_0 = 0.0;
-            double s_1 = 0.0;
-            double s_2 = 0.0;
-
-            for (i = 0; i < 5; i++)
-            {
-                max[i] = 0.0;
-                s_1 = _s_1;
-                s_2 = _s_2;
-                for (j = 0; j < 28; j++)
-                {
-                    s_0 = (double)samples[j];                      // s[t-0]
-                    if (s_0 > 30719.0)
-                        s_0 = 30719.0;
-                    if (s_0 < -30720.0)
-                        s_0 = -30720.0;
-                    ds = s_0 + s_1 * VAGLut[i, 0] + s_2 * VAGLut[i, 1];
-                    buffer[j,i] = ds;
-                    if (Math.Abs(ds) > max[i])
-                        max[i] = Math.Abs(ds);
-                    //                printf( "%+5.2f\n", s2 );
-                    s_2 = s_1;                                  // new s[t-2]
-                    s_1 = s_0;                                  // new s[t-1]
-                }
-
-                if (max[i] < min)
-                {
-                    min = max[i];
-                    predict_nr = i;
-                }
-                if (min <= 7)
-                {
-                    predict_nr = 0;
-                    break;
-                }
-
-            }
-
-            // store s[t-2] and s[t-1] in a static variable
-            // these than used in the next function call
-
-            _s_1 = s_1;
-            _s_2 = s_2;
-
-            for (i = 0; i < 28; i++)
-                d_samples[i] = buffer[i, predict_nr];
-
-            //  if ( min > 32767.0 )
-            //      min = 32767.0;
-
-            min2 = (uint)min;
-            shift_mask = 0x4000;
-            shift_factor = 0;
-
-            while (shift_factor < 12)
-            {
-                //var a = shift_mask & (min2 + (shift_mask >> 3));
-                //if (a)
-                //    break;
-                //(shift_factor)++;
-                //shift_mask = shift_mask >> 1;
-            }
-        }
-
-        static void pack(ref double[] d_samples, ref short[] four_bit, short predict_nr, short shift_factor)
-        {
-            double ds;
-            int di;
-            double s_0;
-            double s_1 = 0.0;
-            double s_2 = 0.0;
-            uint i;
-
-            for (i = 0; i < 28; i++)
-            {
-                s_0 = d_samples[i] + s_1 * VAGLut[predict_nr, 0] + s_2 * VAGLut[predict_nr, 1];
-                ds = s_0 * (1 << shift_factor);
-
-                di = (int)(((int)ds + 0x800) & 0xfffff000);
-
-                if (di > 32767)
-                    di = 32767;
-                if (di < -32768)
-                    di = -32768;
-
-                four_bit[i] = Convert.ToInt16(unchecked((short)di));
-
-                di = di >> shift_factor;
-                s_2 = s_1;
-                s_1 = di - s_0;
-
-            }
-        }
 
         public static byte[] VAGDecoder(byte[] vagData)
         {
@@ -354,7 +298,7 @@ namespace PS2_VAG_ENCODER_DECODER
             using (BinaryWriter vagWritter = new BinaryWriter(vagStream))
             {
                 bool Interleaving = SplitLeft;
-                
+
                 while (vagReader.BaseStream.Position != vagReader.BaseStream.Length)
                 {
                     if (Interleaving)
