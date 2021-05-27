@@ -76,7 +76,7 @@ namespace PS2_VAG_ENCODER_DECODER
                 string fileName = $"{Path.GetFileNameWithoutExtension(_fileToEncode)}.VAG";
                 string filePath = $"{Application.StartupPath}\\{fileName}";
 
-
+                //Encode WAV to VAG
                 short[] PCMData = WavHandler.ConvertPCMDataToShortArray(WavHandler.GetPCMDataFromWav(_fileToEncode));
                 byte[] vagData = VAGHandler.VAGEncoder(PCMData, 16);
                 File.WriteAllBytes(filePath, vagData);

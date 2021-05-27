@@ -16,7 +16,7 @@ namespace PS2_VAG_ENCODER_DECODER
         {
             MemoryStream AudioSampleLeft = new MemoryStream(PCMDataLeft);
             IWaveProvider providerLeft = new RawSourceWaveStream(AudioSampleLeft, new WaveFormat(frequency, bitsPerChannel, 1));
-            
+
             MemoryStream AudioSampleRight = new MemoryStream(PCMDataRight);
             IWaveProvider providerRight = new RawSourceWaveStream(AudioSampleRight, new WaveFormat(frequency, bitsPerChannel, 1));
 

@@ -36,13 +36,13 @@ namespace PS2_VAG_ENCODER_DECODER
         private enum VAGFlag
         {
             VAGF_NOTHING = 0, /* Nothing*/
-            VAGF_END_MARKER_AND_DEC = 1, /* End marker + decode*/
+            VAGF_END_MARKER_AND_DEC = 1, /* last block of the file*/
             VAGF_LOOP_REGION = 2, /* Loop region*/
-            VAGF_LOOP_END = 3, /* Loop end*/
+            VAGF_LOOP_END = 3, /* ending block of the loop*/
             VAGF_START_MARKER = 4, /* Start marker*/
             VAGF_UNK = 5, /* ?*/
-            VAGF_LOOP_START = 6, /* Loop start*/
-            VAGF_END_MARKER_AND_SKIP = 7  /* End marker + don't decode */
+            VAGF_LOOP_START = 6, /* starting block of the loop*/
+            VAGF_END_MARKER_AND_SKIP = 7  /* playback ending position */
         };
 
         //Defines
@@ -157,13 +157,13 @@ namespace PS2_VAG_ENCODER_DECODER
 
                             // so shift==12 if none found...
                             VAGstruct.predict_shift = (byte)(((predict << 4) & 0xF0) | (shift & 0xF));
-                            VAGstruct.flag = ((byte)(numSamples - pos >= 28 ? 0 : 1));
+                            VAGstruct.flag = (byte)(numSamples - pos >= 28 ? VAGFlag.VAGF_NOTHING : VAGFlag.VAGF_END_MARKER_AND_DEC);
 
                             sbyte[] outBuf = new sbyte[28];
 
                             for (int k = 0; k < VAG_SAMPLE_NIBBL; k++)
                             {
-                                double s_double_trans = predictBuf[predict,k] - factors2[ch * 2] * (VAGLut[predict, 0] / 64) - factors2[ch * 2 + 1] * (VAGLut[predict,1] / 64);
+                                double s_double_trans = predictBuf[predict, k] - factors2[ch * 2] * (VAGLut[predict, 0] / 64) - factors2[ch * 2 + 1] * (VAGLut[predict, 1] / 64);
                                 int sample = (int)(((((int)Math.Round(s_double_trans)) << shift) + 0x800) & 0xFFFFF000);
                                 if (sample > 32767)
                                 {
@@ -177,7 +177,7 @@ namespace PS2_VAG_ENCODER_DECODER
 
                                 outBuf[k] = (sbyte)(sample >> 12);
                                 factors2[ch * 2 + 1] = factors2[ch * 2];
-                                factors2[ch * 2] = (double)(sample >> shift) - s_double_trans;
+                                factors2[ch * 2] = (sample >> shift) - s_double_trans;
                             }
 
                             for (int k = 0; k < VAG_SAMPLE_BYTES; k++)
@@ -187,28 +187,25 @@ namespace PS2_VAG_ENCODER_DECODER
                             ChunksList.Add(VAGstruct);
                         }
                     }
-                    // put terminating chunk
-                    VAGStruct endChunk = new VAGStruct
-                    {
-                        predict_shift = 0,
-                        flag = 7,
-                        s = new byte[VAG_SAMPLE_BYTES]
-                    };
-                    ChunksList.Add(endChunk);
 
+                    //Write chunks
                     foreach (VAGStruct chunk in ChunksList)
                     {
                         vagWriter.Write(chunk.predict_shift);
                         vagWriter.Write(chunk.flag);
                         vagWriter.Write(chunk.s);
                     }
+
+                    //Write terminating chunk
+                    vagWriter.Write((byte)0);
+                    vagWriter.Write((byte)VAGFlag.VAGF_END_MARKER_AND_SKIP);
+                    vagWriter.Write(new byte[VAG_SAMPLE_BYTES]);
+
                     vagWriter.Close();
                 }
-
                 vagDat = VagFile.ToArray();
                 VagFile.Close();
             }
-
             return vagDat;
         }
 
