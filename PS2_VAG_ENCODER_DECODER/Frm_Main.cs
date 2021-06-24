@@ -6,21 +6,9 @@ namespace PS2_VAG_ENCODER_DECODER
 {
     public partial class Frm_Main : Form
     {
-        private string _fileToDecode = "";
-        private string _fileToEncode = "";
-
-        // These defaults relate to the Sphinx audio files
-        private int _frequency = 44100;
-        private int _samples = 16;
-        private int _channels = 1;
-
         public Frm_Main()
         {
             InitializeComponent();
-
-            txtFrequency.Text = _frequency.ToString();
-            txtSamples.Text = _samples.ToString();
-            txtChannels.Text = _channels.ToString();
         }
 
         private void Button_Search_Encode_Click(object sender, EventArgs e)
@@ -28,7 +16,7 @@ namespace PS2_VAG_ENCODER_DECODER
             string selectedFile = FileBrowserDialog("WAV Files (*.wav)|*.wav", 0, true);
             if (File.Exists(selectedFile))
             {
-                Textbox_File_To_Encode.Text = _fileToEncode = selectedFile;
+                Textbox_FileToEncode.Text = selectedFile;
             }
         }
 
@@ -37,51 +25,51 @@ namespace PS2_VAG_ENCODER_DECODER
             string selectedFile = FileBrowserDialog("VAG Files (*.VAG)|*.VAG", 0, false);
             if (File.Exists(selectedFile))
             {
-                Textbox_File_To_Decode.Text = _fileToDecode = selectedFile;
+                Textbox_FileToDecode.Text = selectedFile;
             }
         }
 
         private void Button_Decode_Click(object sender, EventArgs e)
         {
-            if (!string.IsNullOrEmpty(_fileToDecode))
+            if (!string.IsNullOrEmpty(Textbox_FileToDecode.Text))
             {
-                _frequency = int.Parse(txtFrequency.Text);
-                _samples = int.Parse(txtSamples.Text);
-                _channels = int.Parse(txtChannels.Text);
+                int _frequency = (int)NumericFrequency.Value;
+                int _samples = (int)NumericSamples.Value;
+                int _channels = (int)NumericChannels.Value;
 
                 // TODO: Allow the user to select the output path
-                string fileName = $"{Path.GetFileNameWithoutExtension(_fileToDecode)}.wav";
-                string filePath = $"{Application.StartupPath}\\{fileName}";
+                string fileName = $"{Path.GetFileNameWithoutExtension(Textbox_FileToDecode.Text)}";
+                string filePath = $"{Path.GetDirectoryName(Textbox_FileToEncode.Text)}\\{fileName}_Decoded.Wav";
 
                 if (_channels == 2)
                 {
-                    byte[] LeftChannelData = VAGHandler.VAGDecoder(VAGHandler.SplitVAGChannels(_fileToDecode, true));
-                    byte[] RightChannelData = VAGHandler.VAGDecoder(VAGHandler.SplitVAGChannels(_fileToDecode, false));
+                    byte[] LeftChannelData = VAGHandler.VAGDecoder(VAGHandler.SplitVAGChannels(Textbox_FileToDecode.Text, true));
+                    byte[] RightChannelData = VAGHandler.VAGDecoder(VAGHandler.SplitVAGChannels(Textbox_FileToDecode.Text, false));
                     WavHandler.CreateWavFileStereo(_frequency, _samples, LeftChannelData, RightChannelData, filePath);
                 }
                 else
                 {
-                    byte[] pcmData = VAGHandler.VAGDecoder(File.ReadAllBytes(_fileToDecode));
+                    byte[] pcmData = VAGHandler.VAGDecoder(File.ReadAllBytes(Textbox_FileToDecode.Text));
                     WavHandler.CreateWavFile(_frequency, _samples, _channels, pcmData, filePath);
                 }
-                MessageBox.Show($"Exported WAV file to: {filePath}");
+                MessageBox.Show($"Exported WAV file to: {filePath}", "PS2 VAG TOOL", MessageBoxButtons.OK, MessageBoxIcon.Information); ;
             }
         }
 
         private void Button_Encode_Click(object sender, EventArgs e)
         {
-            if (!string.IsNullOrEmpty(_fileToEncode))
+            if (!string.IsNullOrEmpty(Textbox_FileToEncode.Text))
             {
                 // TODO: Allow the user to select the output path
-                string fileName = $"{Path.GetFileNameWithoutExtension(_fileToEncode)}.VAG";
-                string filePath = $"{Application.StartupPath}\\{fileName}";
+                string fileName = $"{Path.GetFileNameWithoutExtension(Textbox_FileToEncode.Text)}";
+                string filePath = $"{Path.GetDirectoryName(Textbox_FileToEncode.Text)}\\{fileName}_Encoded.VAG";
 
                 //Encode WAV to VAG
-                short[] PCMData = WavHandler.ConvertPCMDataToShortArray(WavHandler.GetPCMDataFromWav(_fileToEncode));
-                byte[] vagData = VAGHandler.VAGEncoder(PCMData, 16);
+                short[] PCMData = WavHandler.ConvertPCMDataToShortArray(WavHandler.GetPCMDataFromWav(Textbox_FileToEncode.Text));
+                byte[] vagData = VAGHandler.VAGEncoder(PCMData, 16, Convert.ToUInt32(Numeric_LoopOffset.Value), CheckBox_LoopOffset.Checked);
                 File.WriteAllBytes(filePath, vagData);
 
-                MessageBox.Show($"Exported VAG file to: {filePath}");
+                MessageBox.Show($"Exported VAG file to: {filePath}", "PS2 VAG TOOL", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
