@@ -41,26 +41,31 @@ namespace PS2_VAG_ENCODER_DECODER
 
         internal static short[] ConvertPCMDataToShortArray(byte[] PCMData)
         {
-            short[] PCMDataShortArray;
-
-            using (MemoryStream MSPCMData = new MemoryStream(PCMData))
+            short[] samplesShort = new short[PCMData.Length / 2];
+            WaveBuffer sourceWaveBuffer = new WaveBuffer(PCMData);
+            for (int i = 0; i < samplesShort.Length; i++)
             {
-                using (BinaryReader BReader = new BinaryReader(MSPCMData))
+                samplesShort[i] = sourceWaveBuffer.ShortBuffer[i];
+            }
+            return samplesShort;
+        }
+
+        internal static short[] SplitWavChannels(short[] inputChannel, bool leftChannel)
+        {
+            short[] channelData = new short[inputChannel.Length / 2];
+            int channelDataIndex = 0;
+
+            for (int i = 0; i < inputChannel.Length; i++)
+            {
+                if (leftChannel)
                 {
-                    PCMDataShortArray = new short[PCMData.Length / 2];
-
-                    //Get data
-                    for (int i = 0; i < PCMDataShortArray.Length; i++)
-                    {
-                        PCMDataShortArray[i] = BReader.ReadInt16();
-                    }
-
-                    //Close Reader
-                    BReader.Close();
+                    channelData[channelDataIndex] = inputChannel[i];
+                    channelDataIndex++;
                 }
+                leftChannel = !leftChannel;
             }
 
-            return PCMDataShortArray;
+            return channelData;
         }
     }
 }

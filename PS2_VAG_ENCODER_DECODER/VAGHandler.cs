@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace PS2_VAG_ENCODER_DECODER
@@ -9,13 +8,13 @@ namespace PS2_VAG_ENCODER_DECODER
         //*===============================================================================================
         //* Definitions and Classes
         //*===============================================================================================
-        private static int[,] VAGLut = new int[,]
+        private static double[,] VAGLut = new double[,]
         {
-            {   0,   0 },
-            {  60,   0 },
-            { 115, -52 },
-            {  98, -55 },
-            { 122, -60 }
+            {   0.0, 0.0},
+            { -60.0, 0.0},
+            {-115.0, 52.0},
+            { -98.0, 55.0},
+            {-122.0, 60.0}
         };
 
         private struct VAGChunk
@@ -99,19 +98,29 @@ namespace PS2_VAG_ENCODER_DECODER
 
                         for (int j = 0; j < 5; j++)
                         {
-                            double max = 0;
+                            double max = 0.0;
 
                             s1[j] = factors[2];
                             s2[j] = factors[2 + 1];
+
                             for (int k = 0; k < VAG_SAMPLE_NIBBL; k++)
                             {
-                                double sample = Math.Min(30719.0, Math.Max(wavBuf[k], -30720.0));
-                                predictBuf[j, k] = sample - s1[j] * ((double)VAGLut[j, 0] / 64) - s2[j] * ((double)VAGLut[j, 1] / 64);
+                                double sample = wavBuf[k];
+                                if (sample > 30719.0)
+                                {
+                                    sample = 30719.0;
+                                }
+                                if (sample < -30720.0)
+                                {
+                                    sample = -30720.0;
+                                }
 
+                                predictBuf[j, k] = sample + s1[j] * (VAGLut[j, 0] / 64.0) + s2[j] * (VAGLut[j, 1] / 64.0);
                                 if (Math.Abs(predictBuf[j, k]) > max)
                                 {
                                     max = Math.Abs(predictBuf[j, k]);
                                 }
+
                                 s2[j] = s1[j];
                                 s1[j] = sample;
                             }
@@ -141,7 +150,7 @@ namespace PS2_VAG_ENCODER_DECODER
                                 break;
                             }
                             shift++;
-                            shift_mask = shift_mask >> 1;
+                            shift_mask >>= 1;
                         }
 
                         // so shift==12 if none found...
@@ -183,10 +192,17 @@ namespace PS2_VAG_ENCODER_DECODER
                         short[] outBuf = new short[VAG_SAMPLE_NIBBL];
                         for (int k = 0; k < VAG_SAMPLE_NIBBL; k++)
                         {
-                            double s_double_trans = predictBuf[predict, k] - factors2[2] * ((double)VAGLut[predict, 0] / 64) - factors2[2 + 1] * ((double)VAGLut[predict, 1] / 64);
+                            double s_double_trans = predictBuf[predict, k] + factors2[2] * (VAGLut[predict, 0] / 64.0) + factors2[2 + 1] * (VAGLut[predict, 1] / 64.0);
                             double s_double = s_double_trans * (1 << shift);
                             int sample = (int)(((int)s_double + 0x800) & 0xFFFFF000);
-                            sample = Math.Min(short.MaxValue, Math.Max(sample, short.MinValue));
+                            if (sample > short.MaxValue)
+                            {
+                                sample = short.MaxValue;
+                            }
+                            if (sample < short.MinValue)
+                            {
+                                sample = short.MinValue;
+                            }
 
                             outBuf[k] = (short)sample;
                             factors2[2 + 1] = factors2[2];
@@ -199,7 +215,7 @@ namespace PS2_VAG_ENCODER_DECODER
                         }
 
                         // [STEP 5] --- Write
-                        vagWriter.Write((byte)(((predict << 4) & 0xF0) | (shift & 0xF)));
+                        vagWriter.Write((byte)(((predict << 4) & 0xF0) | (shift & 0x0F)));
                         vagWriter.Write(VAGstruct.flag);
                         vagWriter.Write(VAGstruct.s);
                     }
@@ -230,8 +246,8 @@ namespace PS2_VAG_ENCODER_DECODER
             using (MemoryStream pcmStream = new MemoryStream())
             using (BinaryWriter pcmWriter = new BinaryWriter(pcmStream))
             {
-                int hist1 = 0;
-                int hist2 = 0;
+                const int numChannels = 1;
+                double[] factors = new double[numChannels * 2 + sizeof(double)];
 
                 while (vagReader.BaseStream.Position < vagData.Length)
                 {
@@ -246,42 +262,40 @@ namespace PS2_VAG_ENCODER_DECODER
                         s = vagReader.ReadBytes(VAG_SAMPLE_BYTES)
                     };
 
-                    int[] unpacked_nibbles = new int[VAG_SAMPLE_NIBBL];
-
                     if (VAGstruct.flag == (int)VAGFlag.VAGF_PLAYBACK_END)
                     {
                         break;
                     }
-
-                    /* swy: unpack one of the 28 'scale' 4-bit nibbles in the 28 bytes; two 'scales' in one byte */
-                    for (int j = 0; j < VAG_SAMPLE_BYTES; j++)
+                    else
                     {
-                        short sample_byte = VAGstruct.s[j];
-
-                        unpacked_nibbles[j * 2] = (sample_byte & 0x0F) >> 0;
-                        unpacked_nibbles[j * 2 + 1] = (sample_byte & 0xF0) >> 4;
-                    }
-
-                    /* swy: decode each of the 14*2 ADPCM samples in this chunk */
-                    for (int j = 0; j < VAG_SAMPLE_NIBBL; j++)
-                    {
-                        /* swy: turn the signed nibble into a signed int first*/
-                        int scale = unpacked_nibbles[j] << 12;
-                        if (Convert.ToBoolean(scale & 0x8000))
+                        /* swy: unpack one of the 28 'scale' 4-bit nibbles in the 28 bytes; two 'scales' in one byte */
+                        int[] unpacked_nibbles = new int[VAG_SAMPLE_NIBBL];
+                        for (int j = 0; j < VAG_SAMPLE_BYTES; j++)
                         {
-                            scale = (int)(scale | 0xFFFF0000);
+                            short sample_byte = VAGstruct.s[j];
+
+                            unpacked_nibbles[j * 2] = (sample_byte & 0x0F);
+                            unpacked_nibbles[j * 2 + 1] = (sample_byte & 0xF0) >> 4;
                         }
 
-                        /* swy: don't overflow the LUT array access; limit the max allowed index */
-                        sbyte predict_nr = (sbyte)Math.Min(VAGstruct.predictNR, VAG_MAX_LUT_INDX);
+                        /* swy: decode each of the 14*2 ADPCM samples in this chunk */
+                        for (int j = 0; j < VAG_SAMPLE_NIBBL; j++)
+                        {
+                            /* swy: turn the signed nibble into a signed int first*/
+                            int scale = unpacked_nibbles[j] << 12;
+                            if (Convert.ToBoolean(scale & 0x8000))
+                            {
+                                scale = (int)(scale | 0xFFFF0000);
+                            }
 
-                        short sample = (short)((scale >> VAGstruct.shiftFactor) + (hist1 * VAGLut[VAGstruct.predictNR, 0] + hist2 * VAGLut[VAGstruct.predictNR, 1]) / 64);
+                            double sample = (scale >> VAGstruct.shiftFactor) - factors[2] * (VAGLut[VAGstruct.predictNR, 0] / 64.0) - factors[2 + 1] * (VAGLut[VAGstruct.predictNR, 1] / 64.0);
 
-                        pcmWriter.Write(Math.Min(short.MaxValue, Math.Max(sample, short.MinValue)));
+                            /* swy: sliding window with the last two (preceding) decoded samples in the stream/file */
+                            factors[2 + 1] = factors[2];
+                            factors[2] = sample;
 
-                        /* swy: sliding window with the last two (preceding) decoded samples in the stream/file */
-                        hist2 = hist1;
-                        hist1 = sample;
+                            pcmWriter.Write((short)ROUND(sample));
+                        }
                     }
                 }
 
@@ -290,8 +304,6 @@ namespace PS2_VAG_ENCODER_DECODER
                 pcmWriter.Close();
                 pcmStream.Close();
                 vagReader.Close();
-
-                GC.Collect();
             }
             return pcmData;
         }
@@ -299,6 +311,11 @@ namespace PS2_VAG_ENCODER_DECODER
         //*===============================================================================================
         //* Other Functions
         //*===============================================================================================
+        private static int ROUND(double x)
+        {
+            return (int)(x < 0 ? x - 0.5 : x + 0.5);
+        }
+
         public static byte[] SplitVAGChannels(string FilePath, bool SplitLeft)
         {
             byte[] ChannelData;
@@ -328,7 +345,48 @@ namespace PS2_VAG_ENCODER_DECODER
             }
             return ChannelData;
         }
+
+        public static byte[] CombineChannelsVAG(byte[] leftChannel, byte[] rightChannel, int interleaving)
+        {
+            byte[] interleavedData = new byte[leftChannel.Length + rightChannel.Length];
+
+            bool swapchannel = true;
+            int leftChannelIndex = 0;
+            int rightChannelIndex = 0;
+            int interleavedDataIndex = 0;
+
+            for (int i = 0; i < interleavedData.Length; i += interleaving)
+            {
+                //left
+                if (swapchannel)
+                {
+                    for (int j = 0; j < interleaving; j++)
+                    {
+                        if (leftChannelIndex < leftChannel.Length && interleavedDataIndex < interleavedData.Length)
+                        {
+                            interleavedData[interleavedDataIndex] = leftChannel[leftChannelIndex];
+                            leftChannelIndex++;
+                            interleavedDataIndex++;
+                        }
+                    }
+                }
+                //right
+                else
+                {
+                    for (int j = 0; j < interleaving; j++)
+                    {
+                        if (rightChannelIndex < rightChannel.Length)
+                        {
+                            interleavedData[interleavedDataIndex] = rightChannel[rightChannelIndex];
+                            rightChannelIndex++;
+                            interleavedDataIndex++;
+                        }
+                    }
+                }
+                swapchannel = !swapchannel;
+            }
+
+            return interleavedData;
+        }
     }
 }
-
-

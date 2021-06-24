@@ -39,7 +39,7 @@ namespace PS2_VAG_ENCODER_DECODER
 
                 // TODO: Allow the user to select the output path
                 string fileName = $"{Path.GetFileNameWithoutExtension(Textbox_FileToDecode.Text)}";
-                string filePath = $"{Path.GetDirectoryName(Textbox_FileToEncode.Text)}\\{fileName}_Decoded.Wav";
+                string filePath = $"{Path.GetDirectoryName(Textbox_FileToDecode.Text)}\\{fileName}_Decoded.Wav";
 
                 if (_channels == 2)
                 {
@@ -64,12 +64,35 @@ namespace PS2_VAG_ENCODER_DECODER
                 string fileName = $"{Path.GetFileNameWithoutExtension(Textbox_FileToEncode.Text)}";
                 string filePath = $"{Path.GetDirectoryName(Textbox_FileToEncode.Text)}\\{fileName}_Encoded.VAG";
 
-                //Encode WAV to VAG
+                byte[] vagData;
                 short[] PCMData = WavHandler.ConvertPCMDataToShortArray(WavHandler.GetPCMDataFromWav(Textbox_FileToEncode.Text));
-                byte[] vagData = VAGHandler.VAGEncoder(PCMData, 16, Convert.ToUInt32(Numeric_LoopOffset.Value), CheckBox_LoopOffset.Checked);
-                File.WriteAllBytes(filePath, vagData);
 
-                MessageBox.Show($"Exported VAG file to: {filePath}", "PS2 VAG TOOL", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (CheckBox_InputIsStereo.Checked)
+                {
+                    short[] leftChannelData = WavHandler.SplitWavChannels(PCMData, true);
+                    short[] rightChannelData = WavHandler.SplitWavChannels(PCMData, false);
+
+                    byte[] encodedDataLeftChannel = VAGHandler.VAGEncoder(leftChannelData, 16, Convert.ToUInt32(Numeric_LoopOffset.Value), CheckBox_LoopOffset.Checked);
+                    byte[] encodedDataRightChannel = VAGHandler.VAGEncoder(rightChannelData, 16, Convert.ToUInt32(Numeric_LoopOffset.Value), CheckBox_LoopOffset.Checked);
+
+                    try
+                    {
+                        vagData = VAGHandler.CombineChannelsVAG(encodedDataLeftChannel, encodedDataRightChannel, 128);
+                        File.WriteAllBytes(filePath, vagData);
+                        MessageBox.Show($"Exported VAG file to: {filePath}", "PS2 VAG TOOL", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch
+                    {
+                        MessageBox.Show("An error ocurred while interleaving data, is not possible to interleave the data with the specified value, use a lower value.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                else
+                {
+                    //Encode WAV to VAG
+                    vagData = VAGHandler.VAGEncoder(PCMData, 16, Convert.ToUInt32(Numeric_LoopOffset.Value), CheckBox_LoopOffset.Checked);
+                    File.WriteAllBytes(filePath, vagData);
+                    MessageBox.Show($"Exported VAG file to: {filePath}", "PS2 VAG TOOL", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
             }
         }
 

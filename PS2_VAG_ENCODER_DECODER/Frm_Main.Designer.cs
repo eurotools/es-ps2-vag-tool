@@ -52,6 +52,7 @@ namespace PS2_VAG_ENCODER_DECODER
             this.Button_Search_Decode = new System.Windows.Forms.Button();
             this.Textbox_FileToDecode = new System.Windows.Forms.TextBox();
             this.Label_FileToDecode = new System.Windows.Forms.Label();
+            this.CheckBox_InputIsStereo = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.GroupBox_ParamsEncoder.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.Numeric_LoopOffset)).BeginInit();
@@ -73,24 +74,26 @@ namespace PS2_VAG_ENCODER_DECODER
             this.groupBox1.Controls.Add(this.Label_FileToEncode);
             this.groupBox1.Location = new System.Drawing.Point(12, 12);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(475, 127);
+            this.groupBox1.Size = new System.Drawing.Size(462, 127);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Encode:";
             // 
             // GroupBox_ParamsEncoder
             // 
-            this.GroupBox_ParamsEncoder.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.GroupBox_ParamsEncoder.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.GroupBox_ParamsEncoder.Controls.Add(this.CheckBox_InputIsStereo);
             this.GroupBox_ParamsEncoder.Controls.Add(this.CheckBox_LoopOffset);
             this.GroupBox_ParamsEncoder.Controls.Add(this.Numeric_LoopOffset);
             this.GroupBox_ParamsEncoder.Controls.Add(this.Label_LoopOffset);
             this.GroupBox_ParamsEncoder.Location = new System.Drawing.Point(9, 45);
             this.GroupBox_ParamsEncoder.Name = "GroupBox_ParamsEncoder";
-            this.GroupBox_ParamsEncoder.Size = new System.Drawing.Size(379, 76);
+            this.GroupBox_ParamsEncoder.Size = new System.Drawing.Size(366, 76);
             this.GroupBox_ParamsEncoder.TabIndex = 3;
             this.GroupBox_ParamsEncoder.TabStop = false;
-            this.GroupBox_ParamsEncoder.Text = "File Parameters";
+            this.GroupBox_ParamsEncoder.Text = "File Parameters:";
             // 
             // CheckBox_LoopOffset
             // 
@@ -125,8 +128,9 @@ namespace PS2_VAG_ENCODER_DECODER
             // 
             // Button_Encode
             // 
-            this.Button_Encode.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.Button_Encode.Location = new System.Drawing.Point(394, 46);
+            this.Button_Encode.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.Button_Encode.Location = new System.Drawing.Point(381, 46);
             this.Button_Encode.Name = "Button_Encode";
             this.Button_Encode.Size = new System.Drawing.Size(75, 75);
             this.Button_Encode.TabIndex = 4;
@@ -137,11 +141,11 @@ namespace PS2_VAG_ENCODER_DECODER
             // Button_Search_Encode
             // 
             this.Button_Search_Encode.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.Button_Search_Encode.Location = new System.Drawing.Point(394, 17);
+            this.Button_Search_Encode.Location = new System.Drawing.Point(432, 17);
             this.Button_Search_Encode.Name = "Button_Search_Encode";
-            this.Button_Search_Encode.Size = new System.Drawing.Size(75, 23);
+            this.Button_Search_Encode.Size = new System.Drawing.Size(24, 23);
             this.Button_Search_Encode.TabIndex = 2;
-            this.Button_Search_Encode.Text = "Search";
+            this.Button_Search_Encode.Text = "...";
             this.Button_Search_Encode.UseVisualStyleBackColor = true;
             this.Button_Search_Encode.Click += new System.EventHandler(this.Button_Search_Encode_Click);
             // 
@@ -153,7 +157,7 @@ namespace PS2_VAG_ENCODER_DECODER
             this.Textbox_FileToEncode.Location = new System.Drawing.Point(63, 19);
             this.Textbox_FileToEncode.Name = "Textbox_FileToEncode";
             this.Textbox_FileToEncode.ReadOnly = true;
-            this.Textbox_FileToEncode.Size = new System.Drawing.Size(325, 20);
+            this.Textbox_FileToEncode.Size = new System.Drawing.Size(363, 20);
             this.Textbox_FileToEncode.TabIndex = 1;
             // 
             // Label_FileToEncode
@@ -177,7 +181,7 @@ namespace PS2_VAG_ENCODER_DECODER
             this.groupBox2.Controls.Add(this.Label_FileToDecode);
             this.groupBox2.Location = new System.Drawing.Point(12, 145);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(475, 123);
+            this.groupBox2.Size = new System.Drawing.Size(462, 130);
             this.groupBox2.TabIndex = 1;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Decode:";
@@ -197,10 +201,10 @@ namespace PS2_VAG_ENCODER_DECODER
             this.groupBox3.Controls.Add(this.Label_Frequency);
             this.groupBox3.Location = new System.Drawing.Point(9, 45);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(379, 72);
+            this.groupBox3.Size = new System.Drawing.Size(366, 79);
             this.groupBox3.TabIndex = 3;
             this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "File Parameters";
+            this.groupBox3.Text = "File Parameters:";
             // 
             // NumericChannels
             // 
@@ -305,10 +309,11 @@ namespace PS2_VAG_ENCODER_DECODER
             // 
             // Button_Decode
             // 
-            this.Button_Decode.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.Button_Decode.Location = new System.Drawing.Point(394, 46);
+            this.Button_Decode.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.Button_Decode.Location = new System.Drawing.Point(381, 46);
             this.Button_Decode.Name = "Button_Decode";
-            this.Button_Decode.Size = new System.Drawing.Size(75, 71);
+            this.Button_Decode.Size = new System.Drawing.Size(75, 78);
             this.Button_Decode.TabIndex = 4;
             this.Button_Decode.Text = "Decode";
             this.Button_Decode.UseVisualStyleBackColor = true;
@@ -317,11 +322,11 @@ namespace PS2_VAG_ENCODER_DECODER
             // Button_Search_Decode
             // 
             this.Button_Search_Decode.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.Button_Search_Decode.Location = new System.Drawing.Point(394, 17);
+            this.Button_Search_Decode.Location = new System.Drawing.Point(432, 17);
             this.Button_Search_Decode.Name = "Button_Search_Decode";
-            this.Button_Search_Decode.Size = new System.Drawing.Size(75, 23);
+            this.Button_Search_Decode.Size = new System.Drawing.Size(24, 23);
             this.Button_Search_Decode.TabIndex = 2;
-            this.Button_Search_Decode.Text = "Search";
+            this.Button_Search_Decode.Text = "...";
             this.Button_Search_Decode.UseVisualStyleBackColor = true;
             this.Button_Search_Decode.Click += new System.EventHandler(this.Button_Search_Decode_Click);
             // 
@@ -333,7 +338,7 @@ namespace PS2_VAG_ENCODER_DECODER
             this.Textbox_FileToDecode.Location = new System.Drawing.Point(63, 19);
             this.Textbox_FileToDecode.Name = "Textbox_FileToDecode";
             this.Textbox_FileToDecode.ReadOnly = true;
-            this.Textbox_FileToDecode.Size = new System.Drawing.Size(325, 20);
+            this.Textbox_FileToDecode.Size = new System.Drawing.Size(363, 20);
             this.Textbox_FileToDecode.TabIndex = 1;
             // 
             // Label_FileToDecode
@@ -345,16 +350,29 @@ namespace PS2_VAG_ENCODER_DECODER
             this.Label_FileToDecode.TabIndex = 0;
             this.Label_FileToDecode.Text = "File Path:";
             // 
+            // CheckBox_InputIsStereo
+            // 
+            this.CheckBox_InputIsStereo.AutoSize = true;
+            this.CheckBox_InputIsStereo.Location = new System.Drawing.Point(121, 45);
+            this.CheckBox_InputIsStereo.Name = "CheckBox_InputIsStereo";
+            this.CheckBox_InputIsStereo.Size = new System.Drawing.Size(117, 17);
+            this.CheckBox_InputIsStereo.TabIndex = 3;
+            this.CheckBox_InputIsStereo.Text = "Input is a stereo file";
+            this.CheckBox_InputIsStereo.UseVisualStyleBackColor = true;
+            // 
             // Frm_Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(499, 280);
+            this.ClientSize = new System.Drawing.Size(486, 287);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "Frm_Main";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "PS2 VAG Encoder Decoder";
+            this.Text = "PS2 VAG Tool";
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.GroupBox_ParamsEncoder.ResumeLayout(false);
@@ -396,6 +414,7 @@ namespace PS2_VAG_ENCODER_DECODER
         private System.Windows.Forms.NumericUpDown NumericChannels;
         private System.Windows.Forms.NumericUpDown NumericSamples;
         private System.Windows.Forms.NumericUpDown NumericFrequency;
+        private System.Windows.Forms.CheckBox CheckBox_InputIsStereo;
     }
 }
 
