@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 // conjunto de atributos. Cambie estos valores de atributo para modificar la información
 // asociada con un ensamblado.
 [assembly: AssemblyTitle("PS2_VAG_Tool")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("A simple tool to encode-decode headerless PS2 Vag files.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("PS2_VAG_ENCODER_DECODER")]
+[assembly: AssemblyProduct("PS2_VAG_Tool")]
 [assembly: AssemblyCopyright("Copyright ©  2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
