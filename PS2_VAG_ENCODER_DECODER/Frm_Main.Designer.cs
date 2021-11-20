@@ -41,25 +41,22 @@ namespace PS2_VAG_ENCODER_DECODER
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.NumericChannels = new System.Windows.Forms.NumericUpDown();
-            this.NumericSamples = new System.Windows.Forms.NumericUpDown();
             this.NumericFrequency = new System.Windows.Forms.NumericUpDown();
             this.Label_Channels = new System.Windows.Forms.Label();
-            this.Label_SamplesBits = new System.Windows.Forms.Label();
-            this.Label_Samples = new System.Windows.Forms.Label();
             this.Label_FreqHZ = new System.Windows.Forms.Label();
             this.Label_Frequency = new System.Windows.Forms.Label();
             this.Button_Decode = new System.Windows.Forms.Button();
             this.Button_Search_Decode = new System.Windows.Forms.Button();
             this.Textbox_FileToDecode = new System.Windows.Forms.TextBox();
             this.Label_FileToDecode = new System.Windows.Forms.Label();
-            this.CheckBox_InputIsStereo = new System.Windows.Forms.CheckBox();
+            this.SaveFileDialog = new System.Windows.Forms.SaveFileDialog();
+            this.OpenFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.groupBox1.SuspendLayout();
             this.GroupBox_ParamsEncoder.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.Numeric_LoopOffset)).BeginInit();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.NumericChannels)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.NumericSamples)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.NumericFrequency)).BeginInit();
             this.SuspendLayout();
             // 
@@ -74,7 +71,7 @@ namespace PS2_VAG_ENCODER_DECODER
             this.groupBox1.Controls.Add(this.Label_FileToEncode);
             this.groupBox1.Location = new System.Drawing.Point(12, 12);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(462, 127);
+            this.groupBox1.Size = new System.Drawing.Size(434, 109);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Encode:";
@@ -84,13 +81,12 @@ namespace PS2_VAG_ENCODER_DECODER
             this.GroupBox_ParamsEncoder.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.GroupBox_ParamsEncoder.Controls.Add(this.CheckBox_InputIsStereo);
             this.GroupBox_ParamsEncoder.Controls.Add(this.CheckBox_LoopOffset);
             this.GroupBox_ParamsEncoder.Controls.Add(this.Numeric_LoopOffset);
             this.GroupBox_ParamsEncoder.Controls.Add(this.Label_LoopOffset);
             this.GroupBox_ParamsEncoder.Location = new System.Drawing.Point(9, 45);
             this.GroupBox_ParamsEncoder.Name = "GroupBox_ParamsEncoder";
-            this.GroupBox_ParamsEncoder.Size = new System.Drawing.Size(366, 76);
+            this.GroupBox_ParamsEncoder.Size = new System.Drawing.Size(338, 58);
             this.GroupBox_ParamsEncoder.TabIndex = 3;
             this.GroupBox_ParamsEncoder.TabStop = false;
             this.GroupBox_ParamsEncoder.Text = "File Parameters:";
@@ -98,7 +94,7 @@ namespace PS2_VAG_ENCODER_DECODER
             // CheckBox_LoopOffset
             // 
             this.CheckBox_LoopOffset.AutoSize = true;
-            this.CheckBox_LoopOffset.Location = new System.Drawing.Point(9, 45);
+            this.CheckBox_LoopOffset.Location = new System.Drawing.Point(203, 22);
             this.CheckBox_LoopOffset.Name = "CheckBox_LoopOffset";
             this.CheckBox_LoopOffset.Size = new System.Drawing.Size(106, 17);
             this.CheckBox_LoopOffset.TabIndex = 2;
@@ -130,9 +126,9 @@ namespace PS2_VAG_ENCODER_DECODER
             // 
             this.Button_Encode.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.Button_Encode.Location = new System.Drawing.Point(381, 46);
+            this.Button_Encode.Location = new System.Drawing.Point(353, 45);
             this.Button_Encode.Name = "Button_Encode";
-            this.Button_Encode.Size = new System.Drawing.Size(75, 75);
+            this.Button_Encode.Size = new System.Drawing.Size(75, 58);
             this.Button_Encode.TabIndex = 4;
             this.Button_Encode.Text = "Encode";
             this.Button_Encode.UseVisualStyleBackColor = true;
@@ -141,9 +137,9 @@ namespace PS2_VAG_ENCODER_DECODER
             // Button_Search_Encode
             // 
             this.Button_Search_Encode.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.Button_Search_Encode.Location = new System.Drawing.Point(432, 17);
+            this.Button_Search_Encode.Location = new System.Drawing.Point(404, 19);
             this.Button_Search_Encode.Name = "Button_Search_Encode";
-            this.Button_Search_Encode.Size = new System.Drawing.Size(24, 23);
+            this.Button_Search_Encode.Size = new System.Drawing.Size(24, 20);
             this.Button_Search_Encode.TabIndex = 2;
             this.Button_Search_Encode.Text = "...";
             this.Button_Search_Encode.UseVisualStyleBackColor = true;
@@ -157,7 +153,7 @@ namespace PS2_VAG_ENCODER_DECODER
             this.Textbox_FileToEncode.Location = new System.Drawing.Point(63, 19);
             this.Textbox_FileToEncode.Name = "Textbox_FileToEncode";
             this.Textbox_FileToEncode.ReadOnly = true;
-            this.Textbox_FileToEncode.Size = new System.Drawing.Size(363, 20);
+            this.Textbox_FileToEncode.Size = new System.Drawing.Size(335, 20);
             this.Textbox_FileToEncode.TabIndex = 1;
             // 
             // Label_FileToEncode
@@ -179,9 +175,9 @@ namespace PS2_VAG_ENCODER_DECODER
             this.groupBox2.Controls.Add(this.Button_Search_Decode);
             this.groupBox2.Controls.Add(this.Textbox_FileToDecode);
             this.groupBox2.Controls.Add(this.Label_FileToDecode);
-            this.groupBox2.Location = new System.Drawing.Point(12, 145);
+            this.groupBox2.Location = new System.Drawing.Point(12, 127);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(462, 130);
+            this.groupBox2.Size = new System.Drawing.Size(434, 108);
             this.groupBox2.TabIndex = 1;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Decode:";
@@ -192,16 +188,13 @@ namespace PS2_VAG_ENCODER_DECODER
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox3.Controls.Add(this.NumericChannels);
-            this.groupBox3.Controls.Add(this.NumericSamples);
             this.groupBox3.Controls.Add(this.NumericFrequency);
             this.groupBox3.Controls.Add(this.Label_Channels);
-            this.groupBox3.Controls.Add(this.Label_SamplesBits);
-            this.groupBox3.Controls.Add(this.Label_Samples);
             this.groupBox3.Controls.Add(this.Label_FreqHZ);
             this.groupBox3.Controls.Add(this.Label_Frequency);
             this.groupBox3.Location = new System.Drawing.Point(9, 45);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(366, 79);
+            this.groupBox3.Size = new System.Drawing.Size(338, 57);
             this.groupBox3.TabIndex = 3;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "File Parameters:";
@@ -224,23 +217,6 @@ namespace PS2_VAG_ENCODER_DECODER
             this.NumericChannels.TabIndex = 7;
             this.NumericChannels.Value = new decimal(new int[] {
             1,
-            0,
-            0,
-            0});
-            // 
-            // NumericSamples
-            // 
-            this.NumericSamples.Location = new System.Drawing.Point(72, 45);
-            this.NumericSamples.Maximum = new decimal(new int[] {
-            2147483647,
-            0,
-            0,
-            0});
-            this.NumericSamples.Name = "NumericSamples";
-            this.NumericSamples.Size = new System.Drawing.Size(76, 20);
-            this.NumericSamples.TabIndex = 4;
-            this.NumericSamples.Value = new decimal(new int[] {
-            16,
             0,
             0,
             0});
@@ -271,24 +247,6 @@ namespace PS2_VAG_ENCODER_DECODER
             this.Label_Channels.TabIndex = 6;
             this.Label_Channels.Text = "Channels:";
             // 
-            // Label_SamplesBits
-            // 
-            this.Label_SamplesBits.AutoSize = true;
-            this.Label_SamplesBits.Location = new System.Drawing.Point(154, 47);
-            this.Label_SamplesBits.Name = "Label_SamplesBits";
-            this.Label_SamplesBits.Size = new System.Drawing.Size(23, 13);
-            this.Label_SamplesBits.TabIndex = 5;
-            this.Label_SamplesBits.Text = "bits";
-            // 
-            // Label_Samples
-            // 
-            this.Label_Samples.AutoSize = true;
-            this.Label_Samples.Location = new System.Drawing.Point(16, 47);
-            this.Label_Samples.Name = "Label_Samples";
-            this.Label_Samples.Size = new System.Drawing.Size(50, 13);
-            this.Label_Samples.TabIndex = 3;
-            this.Label_Samples.Text = "Samples:";
-            // 
             // Label_FreqHZ
             // 
             this.Label_FreqHZ.AutoSize = true;
@@ -311,9 +269,9 @@ namespace PS2_VAG_ENCODER_DECODER
             // 
             this.Button_Decode.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.Button_Decode.Location = new System.Drawing.Point(381, 46);
+            this.Button_Decode.Location = new System.Drawing.Point(353, 46);
             this.Button_Decode.Name = "Button_Decode";
-            this.Button_Decode.Size = new System.Drawing.Size(75, 78);
+            this.Button_Decode.Size = new System.Drawing.Size(75, 56);
             this.Button_Decode.TabIndex = 4;
             this.Button_Decode.Text = "Decode";
             this.Button_Decode.UseVisualStyleBackColor = true;
@@ -322,9 +280,9 @@ namespace PS2_VAG_ENCODER_DECODER
             // Button_Search_Decode
             // 
             this.Button_Search_Decode.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.Button_Search_Decode.Location = new System.Drawing.Point(432, 17);
+            this.Button_Search_Decode.Location = new System.Drawing.Point(404, 19);
             this.Button_Search_Decode.Name = "Button_Search_Decode";
-            this.Button_Search_Decode.Size = new System.Drawing.Size(24, 23);
+            this.Button_Search_Decode.Size = new System.Drawing.Size(24, 20);
             this.Button_Search_Decode.TabIndex = 2;
             this.Button_Search_Decode.Text = "...";
             this.Button_Search_Decode.UseVisualStyleBackColor = true;
@@ -338,7 +296,7 @@ namespace PS2_VAG_ENCODER_DECODER
             this.Textbox_FileToDecode.Location = new System.Drawing.Point(63, 19);
             this.Textbox_FileToDecode.Name = "Textbox_FileToDecode";
             this.Textbox_FileToDecode.ReadOnly = true;
-            this.Textbox_FileToDecode.Size = new System.Drawing.Size(363, 20);
+            this.Textbox_FileToDecode.Size = new System.Drawing.Size(335, 20);
             this.Textbox_FileToDecode.TabIndex = 1;
             // 
             // Label_FileToDecode
@@ -350,21 +308,19 @@ namespace PS2_VAG_ENCODER_DECODER
             this.Label_FileToDecode.TabIndex = 0;
             this.Label_FileToDecode.Text = "File Path:";
             // 
-            // CheckBox_InputIsStereo
+            // SaveFileDialog
             // 
-            this.CheckBox_InputIsStereo.AutoSize = true;
-            this.CheckBox_InputIsStereo.Location = new System.Drawing.Point(121, 45);
-            this.CheckBox_InputIsStereo.Name = "CheckBox_InputIsStereo";
-            this.CheckBox_InputIsStereo.Size = new System.Drawing.Size(117, 17);
-            this.CheckBox_InputIsStereo.TabIndex = 3;
-            this.CheckBox_InputIsStereo.Text = "Input is a stereo file";
-            this.CheckBox_InputIsStereo.UseVisualStyleBackColor = true;
+            this.SaveFileDialog.RestoreDirectory = true;
+            // 
+            // OpenFileDialog
+            // 
+            this.OpenFileDialog.FileName = "openFileDialog1";
             // 
             // Frm_Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(486, 287);
+            this.ClientSize = new System.Drawing.Size(458, 247);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
@@ -383,7 +339,6 @@ namespace PS2_VAG_ENCODER_DECODER
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.NumericChannels)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.NumericSamples)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.NumericFrequency)).EndInit();
             this.ResumeLayout(false);
 
@@ -405,16 +360,14 @@ namespace PS2_VAG_ENCODER_DECODER
         private System.Windows.Forms.Label Label_FreqHZ;
         private System.Windows.Forms.Label Label_Frequency;
         private System.Windows.Forms.Label Label_Channels;
-        private System.Windows.Forms.Label Label_SamplesBits;
-        private System.Windows.Forms.Label Label_Samples;
         private System.Windows.Forms.GroupBox GroupBox_ParamsEncoder;
         private System.Windows.Forms.CheckBox CheckBox_LoopOffset;
         private System.Windows.Forms.NumericUpDown Numeric_LoopOffset;
         private System.Windows.Forms.Label Label_LoopOffset;
         private System.Windows.Forms.NumericUpDown NumericChannels;
-        private System.Windows.Forms.NumericUpDown NumericSamples;
         private System.Windows.Forms.NumericUpDown NumericFrequency;
-        private System.Windows.Forms.CheckBox CheckBox_InputIsStereo;
+        private System.Windows.Forms.SaveFileDialog SaveFileDialog;
+        private System.Windows.Forms.OpenFileDialog OpenFileDialog;
     }
 }
 
