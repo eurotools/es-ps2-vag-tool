@@ -28,7 +28,7 @@ namespace PS2VagTool
                         Console.WriteLine("-L : force looping");
                         Console.WriteLine("");
                         Console.WriteLine("------------------------------------For Decoding------------------------------------");
-                        Console.WriteLine("Usage: <InputFile> <OutputFile>");
+                        Console.WriteLine("Usage: Decode <InputFile> <OutputFile>");
                     }
                 }
                 else
