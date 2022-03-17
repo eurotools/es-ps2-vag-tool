@@ -3,9 +3,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/jmarti856/ps2_Vag)](https://github.com/jmarti856/ps2_vag/releases/latest)
 
 ### Features
-This tool can be used to encode 16-bits PCM Wav files to the PS2 Vag Format, and vice-versa. 
-
-It is only compatible with headerless PS2 Vag files, so, to decode a Vag file is required to know previously the frequency and the number of channels to avoid undesired results when decoding. 
+This tool can be used to encode 16-bits PCM Wav files to the PS2 Vag Format, and vice-versa. Is also compatible with Aiff files. The tool automatically read the loop chunks, "smpl" for WAV, and "MARK" for Aiff.
 
 ### Download
 Click here to download:
