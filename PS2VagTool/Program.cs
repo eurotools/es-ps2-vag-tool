@@ -14,17 +14,22 @@ namespace PS2VagTool
             if (args.Length > 0)
             {
                 //Show help if required
-                if (args[0].ToLower().Contains("help") || args[0].Contains("?"))
+                if (args.Length == 1)
                 {
-                    Console.WriteLine("PlayStation 2 Vag Tool. By jmarti856");
-                    Console.WriteLine("------------------------------------For Encoding------------------------------------");
-                    Console.WriteLine("Usage: <InputFile> <OutputFile>");
-                    Console.WriteLine("Optioms:");
-                    Console.WriteLine("-1 : force non-looping");
-                    Console.WriteLine("-L : force looping");
-                    Console.WriteLine("");
-                    Console.WriteLine("------------------------------------For Decoding------------------------------------");
-                    Console.WriteLine("Usage: <InputFile> <OutputFile>");
+                    if (args[0].Equals("help", StringComparison.OrdinalIgnoreCase) || args[0].Equals("?"))
+                    {
+                        Console.WriteLine("PlayStation 2 Vag Tool. By jmarti856");
+                        Console.WriteLine("Info: Supports WAV and AIFF files, also reads the loop points inside the file format.");
+                        Console.WriteLine("");
+                        Console.WriteLine("------------------------------------For Encoding------------------------------------");
+                        Console.WriteLine("Usage: <InputFile> <OutputFile>");
+                        Console.WriteLine("Optioms:");
+                        Console.WriteLine("-1 : force non-looping");
+                        Console.WriteLine("-L : force looping");
+                        Console.WriteLine("");
+                        Console.WriteLine("------------------------------------For Decoding------------------------------------");
+                        Console.WriteLine("Usage: <InputFile> <OutputFile>");
+                    }
                 }
                 else
                 {
@@ -42,11 +47,7 @@ namespace PS2VagTool
                                 inputFile = args[1];
                                 if (ProgramFunctions.CheckFileExists(inputFile))
                                 {
-                                    string outputFile = args[2];
-                                    if (ProgramFunctions.CheckDirectoryExists(outputFile))
-                                    {
-                                        ProgramFunctions.ExecuteDecoder(inputFile, outputFile);
-                                    }
+                                    ProgramFunctions.ExecuteDecoder(inputFile, args[2].Trim());
                                 }
                             }
                         }
@@ -55,24 +56,20 @@ namespace PS2VagTool
                             //Execute encoder
                             if (ProgramFunctions.CheckFileExists(inputFile))
                             {
-                                string outputFile = args[1];
-                                if (ProgramFunctions.CheckDirectoryExists(outputFile))
+                                //Check if we have some options setted
+                                if (args.Length > 2)
                                 {
-                                    //Check if we have some options setted
-                                    if (args.Length > 2)
+                                    string options = args[2];
+                                    if (char.Parse(options.TrimStart('-')) == '1')
                                     {
-                                        string options = args[2];
-                                        if (Convert.ToChar(options.TrimStart('-')) == '1')
-                                        {
-                                            forceNoLooping = true;
-                                        }
-                                        else if (Convert.ToChar(options.TrimStart('-')) == 'L')
-                                        {
-                                            forceLooping = true;
-                                        }
+                                        forceNoLooping = true;
                                     }
-                                    ProgramFunctions.ExecuteEncoder(inputFile, outputFile, forceNoLooping, forceLooping);
+                                    else if (char.Parse(options.TrimStart('-')) == 'L')
+                                    {
+                                        forceLooping = true;
+                                    }
                                 }
+                                ProgramFunctions.ExecuteEncoder(inputFile, args[1].Trim(), forceNoLooping, forceLooping);
                             }
                         }
                     }

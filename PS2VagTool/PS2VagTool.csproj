@@ -8,7 +8,7 @@
     <ProjectGuid>{61A9CCAB-37F2-419C-96DA-30F61568B8B8}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>PS2VagTool</RootNamespace>
-    <AssemblyName>PS2VagTool</AssemblyName>
+    <AssemblyName>AIFF2VAG</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>

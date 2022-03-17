@@ -23,12 +23,14 @@ namespace PS2VagTool
                 int frequency, channels;
                 using (AiffFileReader reader = new AiffFileReader(inputFile))
                 {
+                    //Get basic info
+                    frequency = reader.WaveFormat.SampleRate;
+                    channels = reader.WaveFormat.Channels;
+
                     //Get pcm short array
                     byte[] pcmByteData = new byte[reader.Length];
                     reader.Read(pcmByteData, 0, pcmByteData.Length);
                     pcmData = WavFunctions.ConvertByteArrayToShortArray(pcmByteData);
-                    frequency = reader.WaveFormat.SampleRate;
-                    channels = reader.WaveFormat.Channels;
                 }
 
                 //Get markers
@@ -66,6 +68,10 @@ namespace PS2VagTool
                 //Get File Data
                 using (WaveFileReader reader = new WaveFileReader(inputFile))
                 {
+                    //Get basic info
+                    frequency = reader.WaveFormat.SampleRate;
+                    channels = reader.WaveFormat.Channels;
+
                     //Get Loop Data
                     loopData = WavFunctions.ReadSampleChunck(reader);
 
@@ -73,8 +79,6 @@ namespace PS2VagTool
                     byte[] pcmByteData = new byte[reader.Length];
                     reader.Read(pcmByteData, 0, pcmByteData.Length);
                     pcmData = WavFunctions.ConvertByteArrayToShortArray(pcmByteData);
-                    frequency = reader.WaveFormat.SampleRate;
-                    channels = reader.WaveFormat.Channels;
                 }
 
                 //Check loop Data
@@ -113,7 +117,14 @@ namespace PS2VagTool
 
                 //Save file
                 IWaveProvider provider = new RawSourceWaveStream(new MemoryStream(pcmData), new WaveFormat(sampleRate, 16, 1));
-                WaveFileWriter.CreateWaveFile(outputFile, provider);
+                try
+                {
+                    WaveFileWriter.CreateWaveFile(outputFile, provider);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
             }
         }
 
@@ -132,30 +143,6 @@ namespace PS2VagTool
             }
 
             return fileExists;
-        }
-
-        //-------------------------------------------------------------------------------------------------------------------------------
-        internal static bool CheckDirectoryExists(string directoryPathToCheck)
-        {
-            bool directoryExists = false;
-
-            if (Directory.Exists(Path.GetDirectoryName(directoryPathToCheck)))
-            {
-                directoryExists = true;
-            }
-            else
-            {
-                Console.WriteLine("ERROR: output directory not found: " + directoryPathToCheck);
-            }
-
-            return directoryExists;
-        }
-
-        //-------------------------------------------------------------------------------------------------------------------------------
-        internal static string Truncate(this string value, int maxLength)
-        {
-            if (string.IsNullOrEmpty(value)) return value;
-            return value.Length <= maxLength ? value : value.Substring(0, maxLength);
         }
 
         //-------------------------------------------------------------------------------------------------------------------------------
