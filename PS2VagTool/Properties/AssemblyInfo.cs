@@ -3,13 +3,13 @@ using System.Runtime.InteropServices;
 
 // La información general de un ensamblado se controla mediante el siguiente 
 // conjunto de atributos. Cambie estos valores de atributo para modificar la información
-// asociada con un ensamblado.
-[assembly: AssemblyTitle("PS2_VAG_Tool")]
-[assembly: AssemblyDescription("A simple tool to encode-decode headerless PS2 Vag files.")]
+// asociada a un ensamblado.
+[assembly: AssemblyTitle("PS2VagTool")]
+[assembly: AssemblyDescription("PlayStation2 Vag Audio Codec Encoder/Decoder")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("PS2_VAG_Tool")]
-[assembly: AssemblyCopyright("Copyright ©  2021")]
+[assembly: AssemblyProduct("PS2VagTool")]
+[assembly: AssemblyCopyright("Copyright ©  2022")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -19,7 +19,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // El siguiente GUID sirve como id. de typelib si este proyecto se expone a COM.
-[assembly: Guid("ca159f5c-845a-411a-b6cd-712698285b99")]
+[assembly: Guid("61a9ccab-37f2-419c-96da-30f61568b8b8")]
 
 // La información de versión de un ensamblado consta de los cuatro valores siguientes:
 //
