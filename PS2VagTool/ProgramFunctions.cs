@@ -3,7 +3,6 @@ using PS2VagTool.Vag_Functions;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace PS2VagTool
 {
@@ -16,7 +15,7 @@ namespace PS2VagTool
         internal static void ExecuteEncoder(string inputFile, string outputFile, bool forceNoLooping, bool forceLooping)
         {
             string fileExtension = Path.GetExtension(inputFile);
-            if (fileExtension.Equals(".aif", StringComparison.OrdinalIgnoreCase))
+            if (fileExtension.Equals(".aif", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".aiff", StringComparison.OrdinalIgnoreCase))
             {
                 //Read file data
                 short[] pcmData;
