@@ -14,13 +14,26 @@ namespace PS2VagTool
         //-------------------------------------------------------------------------------------------------------------------------------
         internal static void ExecuteEncoder(string inputFile, string outputFile, bool forceNoLooping, bool forceLooping)
         {
+            //Variables to store audio info
+            short[] pcmData = null;
+            int frequency = 0, channels = 0;
+            uint loopStartValue = 0, loopEndValue = 0;
+            bool isLooped = false;
+
+            //Inspect input file and get data
             string fileExtension = Path.GetExtension(inputFile);
             if (fileExtension.Equals(".aif", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".aiff", StringComparison.OrdinalIgnoreCase))
             {
+                //Get markers
+                List<MarkerChunkData> markers = new List<MarkerChunkData>();
+                AiffFileChunksReader.ReadAiffHeader(File.OpenRead(inputFile), markers);
+                if (markers.Count > 1)
+                {
+                    loopStartValue = SonyVag.GetLoopOffsetForVag(markers[0].position) - 1;
+                    loopEndValue = SonyVag.GetLoopOffsetForVag(markers[1].position) - 2;
+                }
+
                 //Read file data
-                short[] pcmData;
-                byte[] vagData;
-                int frequency, channels;
                 using (AiffFileReader reader = new AiffFileReader(inputFile))
                 {
                     //Get basic info
@@ -33,39 +46,11 @@ namespace PS2VagTool
                     pcmData = WavFunctions.ConvertByteArrayToShortArray(pcmByteData);
                 }
 
-                //Get markers
-                List<MarkerChunkData> markers = new List<MarkerChunkData>();
-                AiffFileChunksReader.ReadAiffHeader(File.OpenRead(inputFile), markers);
-                uint loopOffsetValue = 0;
-                if (markers.Count > 0)
-                {
-                    loopOffsetValue = SonyVag.GetLoopOffsetForVag(markers[0].position) - 1;
-                }
-
-                //Start Encode!!
-                if (forceNoLooping)
-                {
-                    vagData = SonyVag.Encode(pcmData, 0, false);
-                }
-                else if (forceLooping)
-                {
-                    vagData = SonyVag.Encode(pcmData, 0, true);
-                }
-                else
-                {
-                    vagData = SonyVag.Encode(pcmData, loopOffsetValue, markers.Count > 0);
-                }
-
-                //Write File
-                SonyVag.WriteVagFile(vagData, outputFile, channels, frequency);
+                isLooped = markers.Count > 0;
             }
             else if (fileExtension.Equals(".wav", StringComparison.OrdinalIgnoreCase))
             {
-                short[] pcmData;
-                byte[] vagData;
                 int[] loopData;
-                int frequency, channels;
-                //Get File Data
                 using (WaveFileReader reader = new WaveFileReader(inputFile))
                 {
                     //Get basic info
@@ -82,24 +67,30 @@ namespace PS2VagTool
                 }
 
                 //Check loop Data
-                uint loopOffsetValue = 0;
                 if (loopData.Length > 0)
                 {
-                    loopOffsetValue = SonyVag.GetLoopOffsetForVag((uint)loopData[1]);
+                    loopStartValue = SonyVag.GetLoopOffsetForVag((uint)loopData[1]) -1;
+                    loopEndValue = SonyVag.GetLoopOffsetForVag((uint)loopData[2])-2;
                 }
 
-                //Start Encode!!
+                isLooped = loopData[0] == 1;
+            }
+
+            //Start Encode!!
+            if (pcmData != null)
+            {
+                byte[] vagData;
                 if (forceNoLooping)
                 {
-                    vagData = SonyVag.Encode(pcmData, 0, false);
+                    vagData = SonyVag.Encode(pcmData, 0, loopEndValue, false);
                 }
                 else if (forceLooping)
                 {
-                    vagData = SonyVag.Encode(pcmData, 0, true);
+                    vagData = SonyVag.Encode(pcmData, 0, loopEndValue, true);
                 }
                 else
                 {
-                    vagData = SonyVag.Encode(pcmData, loopOffsetValue, loopData[0] == 1);
+                    vagData = SonyVag.Encode(pcmData, loopStartValue, loopEndValue, isLooped);
                 }
 
                 //Write File
