@@ -49,6 +49,10 @@ namespace PS2VagTool.Vag_Functions
                     {
                         break;
                     }
+                    else if(vc.flags == (byte)VAGFlag.VAGF_LOOP_START)
+                    {
+                        var sample = PCMStream.Length / 2;
+                    }
                     else
                     {
                         int[] samples = new int[VAG_SAMPLE_NIBBL];
