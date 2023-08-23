@@ -22,7 +22,7 @@ To get started, you can download the latest version of the tool from the link be
 For encoding mono WAV files to PS2 VAG Format, use the following command:
 
 ```console
-PS2VagTool <InputFile>
+AIFF2VAG.exe <InputFile>
 ```
 
 Encoding Options:
@@ -30,7 +30,7 @@ Encoding Options:
 - `-L` : Force looping encoding.
 
 ```console
-PS2VagTool "input.wav"
+AIFF2VAG.exe "input.wav"
 ```
 
 ### Decoding
@@ -38,9 +38,9 @@ PS2VagTool "input.wav"
 To decode PS2 VAG files to mono WAV format, utilize the following command:
 
 ```console
-PS2VagTool Decode <InputFile> <OutputFile>
+AIFF2VAG.exe Decode <InputFile> <OutputFile>
 ```
 
 ```
-PS2VagTool Decode "input.vag" "output.wav"
+AIFF2VAG.exe Decode "input.vag" "output.wav"
 ```
