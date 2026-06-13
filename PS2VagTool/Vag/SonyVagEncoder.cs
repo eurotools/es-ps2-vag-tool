@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace PS2VagTool.Vag_Functions
+namespace PS2VagTool.Vag
 {
     //-------------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------------
@@ -19,6 +19,27 @@ namespace PS2VagTool.Vag_Functions
         };
 
         //-------------------------------------------------------------------------------------------------------------------------------
+        public static byte[] Encode(short[] pcmData, int channels, uint loopStart, uint loopEnd, bool loopFlag)
+        {
+            if (channels <= 1)
+            {
+                return Encode(pcmData, loopStart, loopEnd, loopFlag);
+            }
+
+            if (channels != 2)
+            {
+                throw new ArgumentException("Only mono and stereo VAG encoding is supported.");
+            }
+
+            short[] leftChannel = ExtractChannel(pcmData, channels, 0);
+            short[] rightChannel = ExtractChannel(pcmData, channels, 1);
+            byte[] leftVag = Encode(leftChannel, loopStart, loopEnd, loopFlag);
+            byte[] rightVag = Encode(rightChannel, loopStart, loopEnd, loopFlag);
+
+            return InterleaveVagBlocks(leftVag, rightVag);
+        }
+
+        //-------------------------------------------------------------------------------------------------------------------------------
         public static byte[] Encode(short[] pcmData, uint loopStart, uint loopEnd, bool loopFlag)
         {
             byte[] vagDat;
@@ -32,6 +53,12 @@ namespace PS2VagTool.Vag_Functions
                 byte lastPredictAndShift = 0;
 
                 bool quitAtTheNextIteration = false;
+                short[] wavBuf = new short[VAG_SAMPLE_NIBBL];
+                double[,] predictBuf = new double[VAG_SAMPLE_NIBBL, 5];
+                double[] dSamples = new double[VAG_SAMPLE_NIBBL];
+                short[] outBuf = new short[VAG_SAMPLE_NIBBL];
+                byte[] vagSamples = new byte[VAG_SAMPLE_BYTES];
+                byte[] emptySamples = new byte[VAG_SAMPLE_BYTES];
 
                 //Start packing
                 for (int pos = 0, iteration = 0; pos < pcmData.Length; pos += VAG_SAMPLE_NIBBL, iteration++)
@@ -43,13 +70,13 @@ namespace PS2VagTool.Vag_Functions
                     else
                     {
                         // [STEP 1] --- Get chunk
-                        short[] wavBuf = new short[VAG_SAMPLE_NIBBL];
                         if (iteration < fullChunks)
                         {
                             Buffer.BlockCopy(pcmData, sizeof(short) * pos, wavBuf, 0, sizeof(short) * VAG_SAMPLE_NIBBL);
                         }
                         else
                         {
+                            Array.Clear(wavBuf, 0, wavBuf.Length);
                             int remainingData = pcmData.Length - pos;
                             Buffer.BlockCopy(pcmData, sizeof(short) * pos, wavBuf, 0, sizeof(short) * remainingData);
                         }
@@ -57,14 +84,13 @@ namespace PS2VagTool.Vag_Functions
                         //Initialize struct where we will store the data
                         VAGChunk VAGstruct = new VAGChunk
                         {
-                            sample = new byte[VAG_SAMPLE_BYTES]
+                            sample = vagSamples
                         };
 
                         // [STEP 2] --- Find predict
                         int predict = 0, shift;
                         double min = 1e10;
                         double s_1 = 0.0, s_2 = 0.0;
-                        double[,] predictBuf = new double[28, 5];
 
                         for (int j = 0; j < 5; j++)
                         {
@@ -112,10 +138,9 @@ namespace PS2VagTool.Vag_Functions
                         _hist_1 = s_1;
                         _hist_2 = s_2;
 
-                        double[] d_samples = new double[28];
                         for (int i = 0; i < 28; i++)
                         {
-                            d_samples[i] = predictBuf[i, predict];
+                            dSamples[i] = predictBuf[i, predict];
                         }
 
                         // [STEP 3] --- Find shift
@@ -164,10 +189,9 @@ namespace PS2VagTool.Vag_Functions
                         }
 
                         // [STEP 4] --- Pack
-                        short[] outBuf = new short[VAG_SAMPLE_NIBBL];
                         for (int k = 0; k < VAG_SAMPLE_NIBBL; k++)
                         {
-                            double s_double_trans = d_samples[k] + hist_1 * VagLutEncoder[predict, 0] + hist_2 * VagLutEncoder[predict, 1];
+                            double s_double_trans = dSamples[k] + hist_1 * VagLutEncoder[predict, 0] + hist_2 * VagLutEncoder[predict, 1];
                             double s_double = s_double_trans * (1 << shift);
                             int sample = (int)(((int)s_double + 0x800) & 0xFFFFF000);
 
@@ -205,7 +229,7 @@ namespace PS2VagTool.Vag_Functions
                 {
                     vagWriter.Write(lastPredictAndShift);
                     vagWriter.Write((byte)VAGFlag.VAGF_PLAYBACK_END);
-                    vagWriter.Write(new byte[VAG_SAMPLE_BYTES]);
+                    vagWriter.Write(emptySamples);
                 }
 
                 //Close
@@ -215,6 +239,45 @@ namespace PS2VagTool.Vag_Functions
             }
 
             return vagDat;
+        }
+
+        //-------------------------------------------------------------------------------------------------------------------------------
+        private static short[] ExtractChannel(short[] interleavedSamples, int channels, int channelIndex)
+        {
+            int sampleFrames = interleavedSamples.Length / channels;
+            short[] channelSamples = new short[sampleFrames];
+
+            for (int i = 0; i < sampleFrames; i++)
+            {
+                channelSamples[i] = interleavedSamples[(i * channels) + channelIndex];
+            }
+
+            return channelSamples;
+        }
+
+        //-------------------------------------------------------------------------------------------------------------------------------
+        private static byte[] InterleaveVagBlocks(byte[] leftVag, byte[] rightVag)
+        {
+            if ((leftVag.Length % 16) != 0 || (rightVag.Length % 16) != 0)
+            {
+                throw new InvalidDataException("Encoded VAG channel data is not block aligned.");
+            }
+
+            int leftBlocks = leftVag.Length / 16;
+            int rightBlocks = rightVag.Length / 16;
+            if (leftBlocks != rightBlocks)
+            {
+                throw new InvalidDataException("Encoded VAG channels have different block counts.");
+            }
+
+            byte[] interleavedData = new byte[leftVag.Length + rightVag.Length];
+            for (int block = 0; block < leftBlocks; block++)
+            {
+                Buffer.BlockCopy(leftVag, block * 16, interleavedData, block * 32, 16);
+                Buffer.BlockCopy(rightVag, block * 16, interleavedData, (block * 32) + 16, 16);
+            }
+
+            return interleavedData;
         }
     }
 

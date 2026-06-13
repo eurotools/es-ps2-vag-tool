@@ -22,13 +22,15 @@ namespace PS2VagTool
                     Console.WriteLine("");
                     Console.WriteLine("------------------------------------For Encoding------------------------------------");
                     Console.WriteLine("Usage: <InputFile>");
-                    Console.WriteLine("Optioms:");
+                    Console.WriteLine("Options:");
                     Console.WriteLine("-1 : force non-looping");
                     Console.WriteLine("-L : force looping");
+                    Console.WriteLine("-o <OutputFile> : set output file");
+                    Console.WriteLine("--verbose : print detected format and loop info");
                     Console.WriteLine("");
                     Console.WriteLine("------------------------------------For Decoding------------------------------------");
                     Console.WriteLine("Usage: Decode <InputFile> <OutputFile>");
-                    
+
                 }
                 else
                 {
@@ -53,24 +55,48 @@ namespace PS2VagTool
                             //Get Parameters
                             bool forceLooping = false;
                             bool forceNoLooping = false;
+                            bool verbose = false;
+                            string outputFile = Path.ChangeExtension(inputFile, ".vag");
 
                             //Check if we have some options setted
                             if (args.Length > 1)
                             {
-                                string options = args[1];
-                                if (char.Parse(options.TrimStart('-')) == '1')
+                                for (int i = 1; i < args.Length; i++)
                                 {
-                                    forceNoLooping = true;
-                                }
-                                else if (char.Parse(options.TrimStart('-')) == 'L')
-                                {
-                                    forceLooping = true;
+                                    string option = args[i];
+                                    if (option.Equals("-1", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        forceNoLooping = true;
+                                    }
+                                    else if (option.Equals("-L", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        forceLooping = true;
+                                    }
+                                    else if (option.Equals("--verbose", StringComparison.OrdinalIgnoreCase) || option.Equals("-v", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        verbose = true;
+                                    }
+                                    else if ((option.Equals("-o", StringComparison.OrdinalIgnoreCase) || option.Equals("--output", StringComparison.OrdinalIgnoreCase)) && i + 1 < args.Length)
+                                    {
+                                        outputFile = args[++i].Trim();
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("WARNING: unknown option ignored: " + option);
+                                    }
                                 }
                             }
-                            ProgramFunctions.ExecuteEncoder(inputFile, Path.ChangeExtension(inputFile, ".vag"), forceNoLooping, forceLooping);
+                            if (forceNoLooping && forceLooping)
+                            {
+                                Console.WriteLine("ERROR: -1 and -L cannot be used together.");
+                            }
+                            else
+                            {
+                                ProgramFunctions.ExecuteEncoder(inputFile, outputFile, forceNoLooping, forceLooping, verbose);
+                            }
                         }
                     }
-                    
+
                 }
             }
         }

@@ -1,113 +1,55 @@
-﻿using NAudio.Wave;
-using PS2VagTool.Vag_Functions;
+using NAudio.Wave;
+using PS2VagTool.Audio;
+using PS2VagTool.Vag;
 using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace PS2VagTool
 {
-    //-------------------------------------------------------------------------------------------------------------------------------
-    //-------------------------------------------------------------------------------------------------------------------------------
-    //-------------------------------------------------------------------------------------------------------------------------------
     internal static class ProgramFunctions
     {
-        //-------------------------------------------------------------------------------------------------------------------------------
         internal static void ExecuteEncoder(string inputFile, string outputFile, bool forceNoLooping, bool forceLooping)
         {
-            //Variables to store audio info
-            short[] pcmData = null;
-            int frequency = 0, channels = 0;
-            uint loopStartValue = 0, loopEndValue = 0;
-            bool isLooped = false;
+            ExecuteEncoder(inputFile, outputFile, forceNoLooping, forceLooping, false);
+        }
 
-            //Inspect input file and get data
-            string fileExtension = Path.GetExtension(inputFile);
-            if (fileExtension.Equals(".aif", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".aiff", StringComparison.OrdinalIgnoreCase))
+        internal static void ExecuteEncoder(string inputFile, string outputFile, bool forceNoLooping, bool forceLooping, bool verbose)
+        {
+            try
             {
-                //Get markers
-                List<MarkerChunkData> markers = new List<MarkerChunkData>();
-                AiffFileChunksReader.ReadAiffHeader(File.OpenRead(inputFile), markers);
-                if (markers.Count > 1)
+                AudioInputData inputData = AudioInputReader.Read(inputFile);
+                if (inputData.Channels > 1)
                 {
-                    loopStartValue = SonyVag.GetLoopOffsetForVag(markers[0].position) - 1;
-                    loopEndValue = SonyVag.GetLoopOffsetForVag(markers[1].position) - 2;
+                    Console.WriteLine("INFO: stereo input will be encoded as independent interleaved VAG channels.");
                 }
 
-                //Read file data
-                using (AiffFileReader reader = new AiffFileReader(inputFile))
+                if (!String.IsNullOrEmpty(inputData.LoopInfo.Warning))
                 {
-                    //Get basic info
-                    frequency = reader.WaveFormat.SampleRate;
-                    channels = reader.WaveFormat.Channels;
-
-                    //Get pcm short array
-                    byte[] pcmByteData = new byte[reader.Length];
-                    reader.Read(pcmByteData, 0, pcmByteData.Length);
-                    pcmData = WavFunctions.ConvertByteArrayToShortArray(pcmByteData);
+                    Console.WriteLine("WARNING: " + inputData.LoopInfo.Warning);
                 }
 
-                isLooped = markers.Count > 0;
+                VagLoopSettings loopSettings = CreateLoopSettings(inputData, forceNoLooping, forceLooping);
+                if (verbose)
+                {
+                    PrintEncodeInfo(inputFile, outputFile, inputData, loopSettings, forceNoLooping, forceLooping);
+                }
+
+                byte[] vagData = SonyVag.Encode(inputData.PcmSamples, inputData.Channels, loopSettings.StartBlock, loopSettings.EndBlock, loopSettings.Enabled);
+                SonyVag.WriteVagFile(vagData, outputFile, inputData.Channels, inputData.SampleRate);
             }
-            else if (fileExtension.Equals(".wav", StringComparison.OrdinalIgnoreCase))
+            catch (Exception ex)
             {
-                int[] loopData;
-                using (WaveFileReader reader = new WaveFileReader(inputFile))
-                {
-                    //Get basic info
-                    frequency = reader.WaveFormat.SampleRate;
-                    channels = reader.WaveFormat.Channels;
-
-                    //Get Loop Data
-                    loopData = WavFunctions.ReadSampleChunck(reader);
-
-                    //Get pcm short array
-                    byte[] pcmByteData = new byte[reader.Length];
-                    reader.Read(pcmByteData, 0, pcmByteData.Length);
-                    pcmData = WavFunctions.ConvertByteArrayToShortArray(pcmByteData);
-                }
-
-                //Check loop Data
-                if (loopData.Length > 0)
-                {
-                    loopStartValue = SonyVag.GetLoopOffsetForVag((uint)loopData[1]) -1;
-                    loopEndValue = SonyVag.GetLoopOffsetForVag((uint)loopData[2])-2;
-                }
-
-                isLooped = loopData[0] == 1;
-            }
-
-            //Start Encode!!
-            if (pcmData != null)
-            {
-                byte[] vagData;
-                if (forceNoLooping)
-                {
-                    vagData = SonyVag.Encode(pcmData, 0, loopEndValue, false);
-                }
-                else if (forceLooping)
-                {
-                    vagData = SonyVag.Encode(pcmData, 0, loopEndValue, true);
-                }
-                else
-                {
-                    vagData = SonyVag.Encode(pcmData, loopStartValue, loopEndValue, isLooped);
-                }
-
-                //Write File
-                SonyVag.WriteVagFile(vagData, outputFile, channels, frequency);
+                Console.WriteLine("ERROR: " + ex.Message);
             }
         }
 
-        //-------------------------------------------------------------------------------------------------------------------------------
         internal static void ExecuteDecoder(string inputFile, string outputFile)
         {
-            //Info that we need for creating the wav file
-            if (SonyVag.VagFileIsValid(inputFile, out int sampleRate, out byte[] vagData))
+            if (SonyVag.VagFileIsValid(inputFile, out int sampleRate, out int channels, out byte[] vagData))
             {
-                byte[] pcmData = SonyVag.Decode(vagData);
+                byte[] pcmData = SonyVag.Decode(vagData, channels);
 
-                //Save file
-                IWaveProvider provider = new RawSourceWaveStream(new MemoryStream(pcmData), new WaveFormat(sampleRate, 16, 1));
+                IWaveProvider provider = new RawSourceWaveStream(new MemoryStream(pcmData), new WaveFormat(sampleRate, 16, channels));
                 try
                 {
                     WaveFileWriter.CreateWaveFile(outputFile, provider);
@@ -119,36 +61,108 @@ namespace PS2VagTool
             }
         }
 
-        //-------------------------------------------------------------------------------------------------------------------------------
         internal static bool CheckFileExists(string filePath)
         {
-            bool fileExists = false;
-
             if (File.Exists(filePath))
             {
-                fileExists = true;
+                return true;
+            }
+
+            Console.WriteLine("ERROR: file not found: " + filePath);
+            return false;
+        }
+
+        internal static int FlipInt32(int valueToFlip)
+        {
+            return (valueToFlip & 0x7F000000) >> 24 |
+                   (valueToFlip & 0x00FF0000) >> 8 |
+                   (valueToFlip & 0x0000FF00) << 8 |
+                   (valueToFlip & 0x000000FF) << 24;
+        }
+
+        private static VagLoopSettings CreateLoopSettings(AudioInputData inputData, bool forceNoLooping, bool forceLooping)
+        {
+            if (forceNoLooping)
+            {
+                return new VagLoopSettings(false, 0, 0);
+            }
+
+            if (inputData.LoopInfo.IsLooped)
+            {
+                return new VagLoopSettings(
+                    true,
+                    SonyVag.GetLoopBlockIndexForSample(inputData.LoopInfo.StartSample, inputData.Channels),
+                    GetLoopEndBlockIndex(inputData.LoopInfo.EndSample, inputData.Channels));
+            }
+
+            if (forceLooping)
+            {
+                return new VagLoopSettings(true, 0, GetLastVagBlockIndex(inputData.SampleFrames));
+            }
+
+            return new VagLoopSettings(false, 0, 0);
+        }
+
+        private static uint GetLoopEndBlockIndex(uint loopEndSample, int channels)
+        {
+            if (loopEndSample == 0)
+            {
+                return 0;
+            }
+
+            return SonyVag.GetLoopBlockIndexForSample(loopEndSample - 1, channels);
+        }
+
+        private static uint GetLastVagBlockIndex(int sampleFrames)
+        {
+            if (sampleFrames <= 0)
+            {
+                return 0;
+            }
+
+            return (uint)((sampleFrames - 1) / 28);
+        }
+
+        private static void PrintEncodeInfo(string inputFile, string outputFile, AudioInputData inputData, VagLoopSettings loopSettings, bool forceNoLooping, bool forceLooping)
+        {
+            Console.WriteLine("Input: " + inputFile);
+            Console.WriteLine("Output: " + outputFile);
+            Console.WriteLine("Format: PCM 16-bit, " + inputData.SampleRate + " Hz, " + inputData.Channels + " channel(s)");
+            Console.WriteLine("Samples: " + inputData.SampleFrames);
+
+            if (forceNoLooping)
+            {
+                Console.WriteLine("Loop: disabled by -1");
+            }
+            else if (forceLooping && !inputData.LoopInfo.IsLooped)
+            {
+                Console.WriteLine("Loop: forced by -L");
+                Console.WriteLine("VAG loop blocks: " + loopSettings.StartBlock + " -> " + loopSettings.EndBlock);
+            }
+            else if (inputData.LoopInfo.IsLooped)
+            {
+                Console.WriteLine("Loop: " + inputData.LoopInfo.Source + " samples " + inputData.LoopInfo.StartSample + " -> " + inputData.LoopInfo.EndSample);
+                Console.WriteLine("VAG loop blocks: " + loopSettings.StartBlock + " -> " + loopSettings.EndBlock);
+                Console.WriteLine("VAG loop byte offsets: " + SonyVag.GetLoopByteOffsetForSample(inputData.LoopInfo.StartSample, inputData.Channels) + " -> " + SonyVag.GetLoopByteOffsetForSample(inputData.LoopInfo.EndSample, inputData.Channels));
             }
             else
             {
-                Console.WriteLine("ERROR: file not found: " + filePath);
+                Console.WriteLine("Loop: none");
+            }
+        }
+
+        private sealed class VagLoopSettings
+        {
+            internal VagLoopSettings(bool enabled, uint startBlock, uint endBlock)
+            {
+                Enabled = enabled;
+                StartBlock = startBlock;
+                EndBlock = endBlock;
             }
 
-            return fileExists;
-        }
-
-        //-------------------------------------------------------------------------------------------------------------------------------
-        internal static int FlipInt32(int valueToFlip)
-        {
-            int finalData;
-
-            finalData = (valueToFlip & 0x7F000000) >> (8 * 3) | /* 0x11______ -> 0x______11 */
-                        (valueToFlip & 0x00FF0000) >> (8 * 1) | /* 0x__22____ -> 0x____22__ */
-                        (valueToFlip & 0x0000FF00) << (8 * 1) | /* 0x____33__ -> 0x__33____ */
-                        (valueToFlip & 0x000000FF) << (8 * 3);  /* 0x______44 -> 0x44______ */
-
-            return finalData;
+            internal bool Enabled { get; private set; }
+            internal uint StartBlock { get; private set; }
+            internal uint EndBlock { get; private set; }
         }
     }
-
-    //-------------------------------------------------------------------------------------------------------------------------------
 }

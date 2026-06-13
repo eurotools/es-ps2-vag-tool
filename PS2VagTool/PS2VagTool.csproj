@@ -51,16 +51,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AiffSutff\AiffFileChunksReader.cs" />
-    <Compile Include="AiffSutff\MarkerChunkData.cs" />
+    <Compile Include="Audio\AiffLoopReader.cs" />
+    <Compile Include="Audio\AudioInputData.cs" />
+    <Compile Include="Audio\AudioInputReader.cs" />
+    <Compile Include="Audio\AudioLoopInfo.cs" />
+    <Compile Include="Audio\LoopValidator.cs" />
+    <Compile Include="Audio\PcmUtilities.cs" />
+    <Compile Include="Audio\WavLoopReader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Vag Functions\SonyVagDecoder.cs" />
-    <Compile Include="Vag Functions\SonyVagEncoder.cs" />
-    <Compile Include="Vag Functions\SonyVagWritter.cs" />
-    <Compile Include="Vag Functions\SonyVag.cs" />
+    <Compile Include="Vag\SonyVagDecoder.cs" />
+    <Compile Include="Vag\SonyVagEncoder.cs" />
+    <Compile Include="Vag\SonyVagWriter.cs" />
+    <Compile Include="Vag\SonyVag.cs" />
     <Compile Include="ProgramFunctions.cs" />
-    <Compile Include="WaveStuff\WavFunctions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

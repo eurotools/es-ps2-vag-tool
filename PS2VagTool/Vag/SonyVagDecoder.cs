@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace PS2VagTool.Vag_Functions
+namespace PS2VagTool.Vag
 {
     //-------------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------------
@@ -17,6 +17,28 @@ namespace PS2VagTool.Vag_Functions
             {98.0 / 64.0, -55.0 / 64.0},
             {122.0 / 64.0, -60.0 / 64.0}
         };
+
+        //-------------------------------------------------------------------------------------------------------------------------------
+        public static byte[] Decode(byte[] vagData, int channels)
+        {
+            if (channels <= 1)
+            {
+                return Decode(vagData);
+            }
+
+            if (channels != 2)
+            {
+                throw new ArgumentException("Only mono and stereo VAG decoding is supported.");
+            }
+
+            byte[] leftVag;
+            byte[] rightVag;
+            DeinterleaveVagBlocks(vagData, out leftVag, out rightVag);
+
+            byte[] leftPcm = Decode(leftVag);
+            byte[] rightPcm = Decode(rightVag);
+            return InterleavePcm16(leftPcm, rightPcm);
+        }
 
         //-------------------------------------------------------------------------------------------------------------------------------
         public static byte[] Decode(byte[] vagData)
@@ -49,7 +71,7 @@ namespace PS2VagTool.Vag_Functions
                     {
                         break;
                     }
-                    else if(vc.flags == (byte)VAGFlag.VAGF_LOOP_START)
+                    else if (vc.flags == (byte)VAGFlag.VAGF_LOOP_START)
                     {
                         var sample = PCMStream.Length / 2;
                     }
@@ -93,6 +115,43 @@ namespace PS2VagTool.Vag_Functions
             }
 
             return pcmData;
+        }
+
+        //-------------------------------------------------------------------------------------------------------------------------------
+        private static void DeinterleaveVagBlocks(byte[] stereoVagData, out byte[] leftVag, out byte[] rightVag)
+        {
+            if ((stereoVagData.Length % 32) != 0)
+            {
+                throw new InvalidDataException("Stereo VAG data is not aligned to left/right block pairs.");
+            }
+
+            int blockPairs = stereoVagData.Length / 32;
+            leftVag = new byte[blockPairs * 16];
+            rightVag = new byte[blockPairs * 16];
+
+            for (int block = 0; block < blockPairs; block++)
+            {
+                Buffer.BlockCopy(stereoVagData, block * 32, leftVag, block * 16, 16);
+                Buffer.BlockCopy(stereoVagData, (block * 32) + 16, rightVag, block * 16, 16);
+            }
+        }
+
+        //-------------------------------------------------------------------------------------------------------------------------------
+        private static byte[] InterleavePcm16(byte[] leftPcm, byte[] rightPcm)
+        {
+            int sampleBytes = Math.Min(leftPcm.Length, rightPcm.Length);
+            sampleBytes -= sampleBytes % 2;
+
+            byte[] stereoPcm = new byte[sampleBytes * 2];
+            for (int sourceOffset = 0, targetOffset = 0; sourceOffset < sampleBytes; sourceOffset += 2, targetOffset += 4)
+            {
+                stereoPcm[targetOffset] = leftPcm[sourceOffset];
+                stereoPcm[targetOffset + 1] = leftPcm[sourceOffset + 1];
+                stereoPcm[targetOffset + 2] = rightPcm[sourceOffset];
+                stereoPcm[targetOffset + 3] = rightPcm[sourceOffset + 1];
+            }
+
+            return stereoPcm;
         }
     }
 

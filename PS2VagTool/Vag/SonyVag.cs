@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace PS2VagTool.Vag_Functions
+namespace PS2VagTool.Vag
 {
     //-------------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------------
@@ -32,21 +32,41 @@ namespace PS2VagTool.Vag_Functions
         };
 
         //-------------------------------------------------------------------------------------------------------------------------------
+        private const int VAG_BLOCK_BYTES = 16;
+        private const int VAG_BLOCK_SAMPLES = 28;
         private static readonly int VAG_SAMPLE_BYTES = 14;
         private static readonly int VAG_SAMPLE_NIBBL = VAG_SAMPLE_BYTES * 2;
 
         //-------------------------------------------------------------------------------------------------------------------------------
-        public static uint GetLoopOffsetForVag(uint loopOffset)
+        public static uint GetLoopByteOffsetForSample(uint sampleOffset, int channelCount)
         {
-            uint loopOffsetVag = (uint)(loopOffset / 28 + (((loopOffset % 28) != 0) ? 2 : 1));
-            return loopOffsetVag;
+            if (channelCount < 1)
+            {
+                channelCount = 1;
+            }
+
+            return (uint)(((sampleOffset * VAG_BLOCK_BYTES) / VAG_BLOCK_SAMPLES) * channelCount);
+        }
+
+        //-------------------------------------------------------------------------------------------------------------------------------
+        public static uint GetLoopBlockIndexForSample(uint sampleOffset, int channelCount)
+        {
+            uint byteOffset = GetLoopByteOffsetForSample(sampleOffset, channelCount);
+            return byteOffset / (uint)(VAG_BLOCK_BYTES * Math.Max(channelCount, 1));
         }
 
         //-------------------------------------------------------------------------------------------------------------------------------
         internal static bool VagFileIsValid(string inputFile, out int sampleRate, out byte[] vagData)
         {
+            return VagFileIsValid(inputFile, out sampleRate, out int channels, out vagData);
+        }
+
+        //-------------------------------------------------------------------------------------------------------------------------------
+        internal static bool VagFileIsValid(string inputFile, out int sampleRate, out int channels, out byte[] vagData)
+        {
             bool FileIsValid = true;
             sampleRate = 0;
+            channels = 1;
             vagData = new byte[0];
 
             //Read VAG Header
@@ -64,11 +84,12 @@ namespace PS2VagTool.Vag_Functions
 
                         //Get Num Of Channels
                         binReader.BaseStream.Seek(30, SeekOrigin.Begin);
-                        byte channels = binReader.ReadByte();
-                        if (channels > 1)
+                        byte channelByte = binReader.ReadByte();
+                        channels = channelByte > 1 ? channelByte : 1;
+                        if (channels > 2)
                         {
                             FileIsValid = false;
-                            Console.WriteLine("ERROR: This decoder only support mono files, split channels before using it.");
+                            Console.WriteLine("ERROR: This decoder only supports mono and stereo files.");
                         }
                         else
                         {
