@@ -64,54 +64,91 @@ namespace PS2VagTool.Vag
         //-------------------------------------------------------------------------------------------------------------------------------
         internal static bool VagFileIsValid(string inputFile, out int sampleRate, out int channels, out byte[] vagData)
         {
-            bool FileIsValid = true;
             sampleRate = 0;
             channels = 1;
             vagData = new byte[0];
 
-            //Read VAG Header
-            using (BinaryReader binReader = new BinaryReader(File.Open(inputFile, FileMode.Open, FileAccess.Read, FileShare.Read)))
+            try
             {
-                string Magic = Encoding.ASCII.GetString(binReader.ReadBytes(4));
-                if (Magic.Equals("VAGp"))
+                using (BinaryReader reader = new BinaryReader(File.Open(inputFile, FileMode.Open, FileAccess.Read, FileShare.Read)))
                 {
-                    int FileVersion = ProgramFunctions.FlipInt32(binReader.ReadInt32());
-                    if (FileVersion == 32)
+                    if (reader.BaseStream.Length < 48)
                     {
-                        //Get Sample Rate
-                        binReader.BaseStream.Seek(16, SeekOrigin.Begin);
-                        sampleRate = ProgramFunctions.FlipInt32(binReader.ReadInt32());
+                        throw new InvalidDataException("VAG file is smaller than its 48-byte header.");
+                    }
 
-                        //Get Num Of Channels
-                        binReader.BaseStream.Seek(30, SeekOrigin.Begin);
-                        byte channelByte = binReader.ReadByte();
-                        channels = channelByte > 1 ? channelByte : 1;
-                        if (channels > 2)
-                        {
-                            FileIsValid = false;
-                            Console.WriteLine("ERROR: This decoder only supports mono and stereo files.");
-                        }
-                        else
-                        {
-                            binReader.BaseStream.Seek(48, SeekOrigin.Begin);
-                            int totalSize = (int)(binReader.BaseStream.Length - 0x30);
-                            vagData = binReader.ReadBytes(totalSize);
-                        }
-                    }
-                    else
+                    if (Encoding.ASCII.GetString(reader.ReadBytes(4)) != "VAGp")
                     {
-                        FileIsValid = false;
-                        Console.WriteLine("ERROR: The file version is not supported, file version: " + FileVersion + " supported version: 32.");
+                        throw new InvalidDataException("Invalid VAG magic; expected VAGp.");
                     }
-                }
-                else
-                {
-                    FileIsValid = false;
-                    Console.WriteLine("ERROR: Invalid file type.");
+
+                    int version = ReadInt32BigEndian(reader);
+                    if (version != 32)
+                    {
+                        throw new InvalidDataException("Unsupported VAG version " + version + "; expected 32.");
+                    }
+
+                    reader.BaseStream.Position = 12;
+                    int declaredDataSize = ReadInt32BigEndian(reader);
+                    long actualDataSize = reader.BaseStream.Length - 48;
+                    if (declaredDataSize < 0 || declaredDataSize != actualDataSize)
+                    {
+                        throw new InvalidDataException("VAG data size mismatch: header declares " + declaredDataSize + " bytes but file contains " + actualDataSize + ".");
+                    }
+
+                    sampleRate = ReadInt32BigEndian(reader);
+                    if (sampleRate <= 0 || sampleRate > 384000)
+                    {
+                        throw new InvalidDataException("Invalid VAG sample rate: " + sampleRate + ".");
+                    }
+
+                    reader.BaseStream.Position = 30;
+                    byte channelByte = reader.ReadByte();
+                    channels = channelByte == 0 || channelByte == 1 ? 1 : channelByte;
+                    if (channels > 2)
+                    {
+                        throw new InvalidDataException("Only mono and stereo VAG files are supported; header declares " + channels + " channels.");
+                    }
+
+                    reader.BaseStream.Position = 48;
+                    byte[] storedData = reader.ReadBytes(declaredDataSize);
+                    int dataOffset = HasSonyInitializationBlock(storedData) ? 16 : 0;
+                    int audioSize = storedData.Length - dataOffset;
+                    if (audioSize <= 0 || audioSize % VAG_BLOCK_BYTES != 0)
+                    {
+                        throw new InvalidDataException("VAG audio data is empty or not aligned to 16-byte ADPCM blocks.");
+                    }
+
+                    vagData = new byte[audioSize];
+                    Buffer.BlockCopy(storedData, dataOffset, vagData, 0, audioSize);
+                    return true;
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERROR: " + ex.Message);
+                sampleRate = 0;
+                channels = 1;
+                vagData = new byte[0];
+                return false;
+            }
+        }
 
-            return FileIsValid;
+        private static int ReadInt32BigEndian(BinaryReader reader)
+        {
+            byte[] value = reader.ReadBytes(4);
+            if (value.Length != 4) throw new EndOfStreamException();
+            return (value[0] << 24) | (value[1] << 16) | (value[2] << 8) | value[3];
+        }
+
+        private static bool HasSonyInitializationBlock(byte[] data)
+        {
+            if (data == null || data.Length < VAG_BLOCK_BYTES) return false;
+            for (int i = 0; i < VAG_BLOCK_BYTES; i++)
+            {
+                if (data[i] != 0) return false;
+            }
+            return true;
         }
     }
 

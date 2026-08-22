@@ -87,10 +87,27 @@ namespace PS2VagTool.Audio
             AiffMarker endMarker = FindMarker(markers, endMarkerId);
             if (startMarker == null || endMarker == null)
             {
+                AudioLoopInfo compatibilityLoop = BuildSonyCompatibilityLoopFromMarkers(markers, totalSampleFrames);
+                if (compatibilityLoop.IsLooped)
+                {
+                    return new AudioLoopInfo(true, compatibilityLoop.StartSample, compatibilityLoop.EndSample, "AIFF MARK", "AIFF INST loop references missing MARK entries; using the first two MARK entries for Sony AIFF2VAG compatibility.");
+                }
+
                 return new AudioLoopInfo(false, 0, 0, null, "AIFF INST loop references missing MARK entries.");
             }
 
             return LoopValidator.Validate(startMarker.Position, endMarker.Position, totalSampleFrames, "AIFF INST");
+        }
+
+        private static AudioLoopInfo BuildSonyCompatibilityLoopFromMarkers(List<AiffMarker> markers, long totalSampleFrames)
+        {
+            if (markers.Count < 2)
+            {
+                return AudioLoopInfo.None;
+            }
+
+            uint start = markers[0].Position > uint.MaxValue - 27 ? uint.MaxValue : markers[0].Position + 27;
+            return LoopValidator.Validate(start, markers[1].Position, totalSampleFrames, "AIFF MARK");
         }
 
         private static AudioLoopInfo BuildCompatibilityLoopFromMarkers(List<AiffMarker> markers, long totalSampleFrames)

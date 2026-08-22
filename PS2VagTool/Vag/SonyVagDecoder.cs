@@ -21,6 +21,11 @@ namespace PS2VagTool.Vag
         //-------------------------------------------------------------------------------------------------------------------------------
         public static byte[] Decode(byte[] vagData, int channels)
         {
+            return Decode(vagData, channels, 16);
+        }
+
+        public static byte[] Decode(byte[] vagData, int channels, int interleaveSize)
+        {
             if (channels <= 1)
             {
                 return Decode(vagData);
@@ -33,7 +38,7 @@ namespace PS2VagTool.Vag
 
             byte[] leftVag;
             byte[] rightVag;
-            DeinterleaveVagBlocks(vagData, out leftVag, out rightVag);
+            DeinterleaveVagBlocks(vagData, interleaveSize, out leftVag, out rightVag);
 
             byte[] leftPcm = Decode(leftVag);
             byte[] rightPcm = Decode(rightVag);
@@ -51,12 +56,14 @@ namespace PS2VagTool.Vag
             {
                 double hist_1 = 0.0, hist_2 = 0.0;
 
-                //Skip header
-                VagReader.BaseStream.Seek(16, SeekOrigin.Begin);
-
                 //Start decoding
                 while (VagReader.BaseStream.Position < VagReader.BaseStream.Length)
                 {
+                    if (VagReader.BaseStream.Length - VagReader.BaseStream.Position < 16)
+                    {
+                        throw new InvalidDataException("Truncated VAG ADPCM block.");
+                    }
+
                     //Read chunk data
                     byte DecodingCoefficent = VagReader.ReadByte();
                     VAGChunk vc = new VAGChunk
@@ -66,6 +73,15 @@ namespace PS2VagTool.Vag
                         flags = VagReader.ReadByte(),
                         sample = VagReader.ReadBytes(14)
                     };
+
+                    if (vc.predict < 0 || vc.predict >= VagLutDecoder.GetLength(0))
+                    {
+                        throw new InvalidDataException("Invalid VAG predictor index: " + vc.predict + ".");
+                    }
+                    if (vc.shift < 0 || vc.shift > 12)
+                    {
+                        throw new InvalidDataException("Invalid VAG shift value: " + vc.shift + ".");
+                    }
 
                     if (vc.flags == (byte)VAGFlag.VAGF_PLAYBACK_END)
                     {
@@ -96,10 +112,7 @@ namespace PS2VagTool.Vag
                                 s = (int)(s | 0xFFFF0000);
                             }
 
-                            /* swy: don't overflow the LUT array access; limit the max allowed index */
-                            sbyte predict = Math.Min(vc.predict, (sbyte)(VagLutDecoder.GetLength(0) - 1));
-
-                            double sample = (s >> vc.shift) + hist_1 * VagLutDecoder[predict, 0] + hist_2 * VagLutDecoder[predict, 1];
+                            double sample = (s >> vc.shift) + hist_1 * VagLutDecoder[vc.predict, 0] + hist_2 * VagLutDecoder[vc.predict, 1];
                             hist_2 = hist_1;
                             hist_1 = sample;
 
@@ -118,21 +131,29 @@ namespace PS2VagTool.Vag
         }
 
         //-------------------------------------------------------------------------------------------------------------------------------
-        private static void DeinterleaveVagBlocks(byte[] stereoVagData, out byte[] leftVag, out byte[] rightVag)
+        private static void DeinterleaveVagBlocks(byte[] stereoVagData, int interleaveSize, out byte[] leftVag, out byte[] rightVag)
         {
-            if ((stereoVagData.Length % 32) != 0)
+            if (interleaveSize <= 0 || interleaveSize > 0x100000 || (interleaveSize % 16) != 0)
+            {
+                throw new ArgumentOutOfRangeException("interleaveSize", "VAG interleave size must be a positive multiple of 16.");
+            }
+
+            int interleavePairSize = interleaveSize * 2;
+            if ((stereoVagData.Length % interleavePairSize) != 0)
             {
                 throw new InvalidDataException("Stereo VAG data is not aligned to left/right block pairs.");
             }
 
-            int blockPairs = stereoVagData.Length / 32;
-            leftVag = new byte[blockPairs * 16];
-            rightVag = new byte[blockPairs * 16];
+            int interleavePairs = stereoVagData.Length / interleavePairSize;
+            leftVag = new byte[interleavePairs * interleaveSize];
+            rightVag = new byte[interleavePairs * interleaveSize];
 
-            for (int block = 0; block < blockPairs; block++)
+            for (int block = 0; block < interleavePairs; block++)
             {
-                Buffer.BlockCopy(stereoVagData, block * 32, leftVag, block * 16, 16);
-                Buffer.BlockCopy(stereoVagData, (block * 32) + 16, rightVag, block * 16, 16);
+                int inputOffset = block * interleavePairSize;
+                int outputOffset = block * interleaveSize;
+                Buffer.BlockCopy(stereoVagData, inputOffset, leftVag, outputOffset, interleaveSize);
+                Buffer.BlockCopy(stereoVagData, inputOffset + interleaveSize, rightVag, outputOffset, interleaveSize);
             }
         }
 

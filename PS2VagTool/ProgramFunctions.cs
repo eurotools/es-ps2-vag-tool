@@ -8,19 +8,24 @@ namespace PS2VagTool
 {
     internal static class ProgramFunctions
     {
-        internal static void ExecuteEncoder(string inputFile, string outputFile, bool forceNoLooping, bool forceLooping)
+        internal static bool ExecuteEncoder(string inputFile, string outputFile, bool forceNoLooping, bool forceLooping)
         {
-            ExecuteEncoder(inputFile, outputFile, forceNoLooping, forceLooping, false);
+            return ExecuteEncoder(inputFile, outputFile, forceNoLooping, forceLooping, false);
         }
 
-        internal static void ExecuteEncoder(string inputFile, string outputFile, bool forceNoLooping, bool forceLooping, bool verbose)
+        internal static bool ExecuteEncoder(string inputFile, string outputFile, bool forceNoLooping, bool forceLooping, bool verbose)
+        {
+            return ExecuteEncoder(inputFile, outputFile, forceNoLooping, forceLooping, verbose, 16);
+        }
+
+        internal static bool ExecuteEncoder(string inputFile, string outputFile, bool forceNoLooping, bool forceLooping, bool verbose, int interleaveSize)
         {
             try
             {
                 AudioInputData inputData = AudioInputReader.Read(inputFile);
                 if (inputData.Channels > 1)
                 {
-                    Console.WriteLine("INFO: stereo input will be encoded as independent interleaved VAG channels.");
+                    Console.WriteLine("INFO: stereo input will be encoded as independent VAG channels with " + interleaveSize + "-byte interleaving.");
                 }
 
                 if (!String.IsNullOrEmpty(inputData.LoopInfo.Warning))
@@ -34,30 +39,56 @@ namespace PS2VagTool
                     PrintEncodeInfo(inputFile, outputFile, inputData, loopSettings, forceNoLooping, forceLooping);
                 }
 
-                byte[] vagData = SonyVag.Encode(inputData.PcmSamples, inputData.Channels, loopSettings.StartBlock, loopSettings.EndBlock, loopSettings.Enabled);
+                byte[] vagData = SonyVag.Encode(inputData.PcmSamples, inputData.Channels, loopSettings.StartBlock, loopSettings.EndBlock, loopSettings.Enabled, interleaveSize);
                 SonyVag.WriteVagFile(vagData, outputFile, inputData.Channels, inputData.SampleRate);
+                return true;
             }
             catch (Exception ex)
             {
                 Console.WriteLine("ERROR: " + ex.Message);
+                return false;
             }
         }
 
-        internal static void ExecuteDecoder(string inputFile, string outputFile)
+        internal static bool ExecuteDecoder(string inputFile, string outputFile)
         {
-            if (SonyVag.VagFileIsValid(inputFile, out int sampleRate, out int channels, out byte[] vagData))
+            return ExecuteDecoder(inputFile, outputFile, 16, null);
+        }
+
+        internal static bool ExecuteDecoder(string inputFile, string outputFile, int interleaveSize)
+        {
+            return ExecuteDecoder(inputFile, outputFile, interleaveSize, null);
+        }
+
+        internal static bool ExecuteDecoder(string inputFile, string outputFile, int interleaveSize, int? sampleFrames)
+        {
+            try
             {
-                byte[] pcmData = SonyVag.Decode(vagData, channels);
+                if (!SonyVag.VagFileIsValid(inputFile, out int sampleRate, out int channels, out byte[] vagData))
+                {
+                    return false;
+                }
+
+                byte[] pcmData = SonyVag.Decode(vagData, channels, interleaveSize);
+                if (sampleFrames.HasValue)
+                {
+                    long requestedBytes = (long)sampleFrames.Value * channels * sizeof(short);
+                    if (requestedBytes > pcmData.Length)
+                    {
+                        throw new InvalidDataException("--samples exceeds the decoded PCM length.");
+                    }
+
+                    Array.Resize(ref pcmData, (int)requestedBytes);
+                }
 
                 IWaveProvider provider = new RawSourceWaveStream(new MemoryStream(pcmData), new WaveFormat(sampleRate, 16, channels));
-                try
-                {
-                    WaveFileWriter.CreateWaveFile(outputFile, provider);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
+                WaveFileWriter.CreateWaveFile(outputFile, provider);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERROR: " + ex.Message);
+                return false;
             }
         }
 

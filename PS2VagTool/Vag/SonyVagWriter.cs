@@ -12,10 +12,13 @@ namespace PS2VagTool.Vag
         //-------------------------------------------------------------------------------------------------------------------------------
         internal static void WriteVagFile(byte[] vagData, string outputFilePath, int numOfChannels, int samplingFrequency)
         {
-            try
+            if (vagData == null) throw new ArgumentNullException("vagData");
+            if (String.IsNullOrWhiteSpace(outputFilePath)) throw new ArgumentException("Output file path is empty.", "outputFilePath");
+            if (numOfChannels < 1 || numOfChannels > 2) throw new ArgumentOutOfRangeException("numOfChannels");
+            if (samplingFrequency <= 0) throw new ArgumentOutOfRangeException("samplingFrequency");
+
+            using (BinaryWriter BinWriter = new BinaryWriter(File.Open(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.Read), Encoding.ASCII))
             {
-                using (BinaryWriter BinWriter = new BinaryWriter(File.Open(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.Read), Encoding.ASCII))
-                {
                     //Magic 
                     BinWriter.Write(Encoding.ASCII.GetBytes("VAGp"));
                     //Version
@@ -40,11 +43,6 @@ namespace PS2VagTool.Vag
                     //Empty line
                     BinWriter.Write(new byte[16]);
                     BinWriter.Write(vagData);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
             }
         }
     }

@@ -21,6 +21,11 @@ namespace PS2VagTool.Vag
         //-------------------------------------------------------------------------------------------------------------------------------
         public static byte[] Encode(short[] pcmData, int channels, uint loopStart, uint loopEnd, bool loopFlag)
         {
+            return Encode(pcmData, channels, loopStart, loopEnd, loopFlag, 16);
+        }
+
+        public static byte[] Encode(short[] pcmData, int channels, uint loopStart, uint loopEnd, bool loopFlag, int interleaveSize)
+        {
             if (channels <= 1)
             {
                 return Encode(pcmData, loopStart, loopEnd, loopFlag);
@@ -36,7 +41,7 @@ namespace PS2VagTool.Vag
             byte[] leftVag = Encode(leftChannel, loopStart, loopEnd, loopFlag);
             byte[] rightVag = Encode(rightChannel, loopStart, loopEnd, loopFlag);
 
-            return InterleaveVagBlocks(leftVag, rightVag);
+            return InterleaveVagBlocks(leftVag, rightVag, interleaveSize);
         }
 
         //-------------------------------------------------------------------------------------------------------------------------------
@@ -256,25 +261,36 @@ namespace PS2VagTool.Vag
         }
 
         //-------------------------------------------------------------------------------------------------------------------------------
-        private static byte[] InterleaveVagBlocks(byte[] leftVag, byte[] rightVag)
+        private static byte[] InterleaveVagBlocks(byte[] leftVag, byte[] rightVag, int interleaveSize)
         {
+            if (interleaveSize <= 0 || interleaveSize > 0x100000 || (interleaveSize % 16) != 0)
+            {
+                throw new ArgumentOutOfRangeException("interleaveSize", "VAG interleave size must be a positive multiple of 16.");
+            }
+
             if ((leftVag.Length % 16) != 0 || (rightVag.Length % 16) != 0)
             {
                 throw new InvalidDataException("Encoded VAG channel data is not block aligned.");
             }
 
-            int leftBlocks = leftVag.Length / 16;
-            int rightBlocks = rightVag.Length / 16;
-            if (leftBlocks != rightBlocks)
+            if (leftVag.Length != rightVag.Length)
             {
                 throw new InvalidDataException("Encoded VAG channels have different block counts.");
             }
 
-            byte[] interleavedData = new byte[leftVag.Length + rightVag.Length];
-            for (int block = 0; block < leftBlocks; block++)
+            long channelSize64 = (((long)leftVag.Length + interleaveSize - 1) / interleaveSize) * interleaveSize;
+            if (channelSize64 > Int32.MaxValue / 2)
             {
-                Buffer.BlockCopy(leftVag, block * 16, interleavedData, block * 32, 16);
-                Buffer.BlockCopy(rightVag, block * 16, interleavedData, (block * 32) + 16, 16);
+                throw new InvalidDataException("Stereo VAG output is too large.");
+            }
+            int channelSize = (int)channelSize64;
+            byte[] interleavedData = new byte[channelSize * 2];
+            for (int offset = 0; offset < leftVag.Length; offset += interleaveSize)
+            {
+                int bytesToCopy = Math.Min(interleaveSize, leftVag.Length - offset);
+                int outputOffset = (offset / interleaveSize) * interleaveSize * 2;
+                Buffer.BlockCopy(leftVag, offset, interleavedData, outputOffset, bytesToCopy);
+                Buffer.BlockCopy(rightVag, offset, interleavedData, outputOffset + interleaveSize, bytesToCopy);
             }
 
             return interleavedData;
