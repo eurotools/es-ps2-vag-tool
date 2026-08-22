@@ -1,3 +1,14 @@
+//-------------------------------------------------------------------------------------------------------------------------------
+//  _____   _____ ___   __      __     _____
+// |  __ \ / ____|__ \  \ \    / /\   / ____|
+// | |__) | (___    ) |  \ \  / /  \ | |  __
+// |  ___/ \___ \  / /    \ \/ / /\ \| | |_ |
+// | |     ____) |/ /_     \  / ____ \ |__| |
+// |_|    |_____/|____|     \/_/    \_\_____|
+//
+//-------------------------------------------------------------------------------------------------------------------------------
+// Audio Conversion Operations
+//-------------------------------------------------------------------------------------------------------------------------------
 using NAudio.Wave;
 using PS2VagTool.Audio;
 using PS2VagTool.Vag;
@@ -6,18 +17,24 @@ using System.IO;
 
 namespace PS2VagTool
 {
+    //-------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------
     internal static class ProgramFunctions
     {
+        //-------------------------------------------------------------------------------------------------------------------------------
         internal static bool ExecuteEncoder(string inputFile, string outputFile, bool forceNoLooping, bool forceLooping)
         {
             return ExecuteEncoder(inputFile, outputFile, forceNoLooping, forceLooping, false);
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         internal static bool ExecuteEncoder(string inputFile, string outputFile, bool forceNoLooping, bool forceLooping, bool verbose)
         {
             return ExecuteEncoder(inputFile, outputFile, forceNoLooping, forceLooping, verbose, 16);
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         internal static bool ExecuteEncoder(string inputFile, string outputFile, bool forceNoLooping, bool forceLooping, bool verbose, int interleaveSize)
         {
             try
@@ -50,16 +67,19 @@ namespace PS2VagTool
             }
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         internal static bool ExecuteDecoder(string inputFile, string outputFile)
         {
             return ExecuteDecoder(inputFile, outputFile, 16, null);
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         internal static bool ExecuteDecoder(string inputFile, string outputFile, int interleaveSize)
         {
             return ExecuteDecoder(inputFile, outputFile, interleaveSize, null);
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         internal static bool ExecuteDecoder(string inputFile, string outputFile, int interleaveSize, int? sampleFrames)
         {
             try
@@ -92,6 +112,7 @@ namespace PS2VagTool
             }
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         internal static bool CheckFileExists(string filePath)
         {
             if (File.Exists(filePath))
@@ -103,6 +124,7 @@ namespace PS2VagTool
             return false;
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         internal static int FlipInt32(int valueToFlip)
         {
             return (valueToFlip & 0x7F000000) >> 24 |
@@ -111,6 +133,7 @@ namespace PS2VagTool
                    (valueToFlip & 0x000000FF) << 24;
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static VagLoopSettings CreateLoopSettings(AudioInputData inputData, bool forceNoLooping, bool forceLooping)
         {
             if (forceNoLooping)
@@ -134,6 +157,7 @@ namespace PS2VagTool
             return new VagLoopSettings(false, 0, 0);
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static uint GetLoopEndBlockIndex(uint loopEndSample, int channels)
         {
             if (loopEndSample == 0)
@@ -144,6 +168,7 @@ namespace PS2VagTool
             return SonyVag.GetLoopBlockIndexForSample(loopEndSample - 1, channels);
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static uint GetLastVagBlockIndex(int sampleFrames)
         {
             if (sampleFrames <= 0)
@@ -154,6 +179,7 @@ namespace PS2VagTool
             return (uint)((sampleFrames - 1) / 28);
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static void PrintEncodeInfo(string inputFile, string outputFile, AudioInputData inputData, VagLoopSettings loopSettings, bool forceNoLooping, bool forceLooping)
         {
             Console.WriteLine("Input: " + inputFile);
@@ -182,6 +208,9 @@ namespace PS2VagTool
             }
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
+        //-------------------------------------------------------------------------------------------------------------------------------
+        //-------------------------------------------------------------------------------------------------------------------------------
         private sealed class VagLoopSettings
         {
             internal VagLoopSettings(bool enabled, uint startBlock, uint endBlock)

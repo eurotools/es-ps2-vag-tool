@@ -1,14 +1,29 @@
+//-------------------------------------------------------------------------------------------------------------------------------
+//  _____   _____ ___   __      __     _____
+// |  __ \ / ____|__ \  \ \    / /\   / ____|
+// | |__) | (___    ) |  \ \  / /  \ | |  __
+// |  ___/ \___ \  / /    \ \/ / /\ \| | |_ |
+// | |     ____) |/ /_     \  / ____ \ |__| |
+// |_|    |_____/|____|     \/_/    \_\_____|
+//
+//-------------------------------------------------------------------------------------------------------------------------------
+// Command Line Interface
+//-------------------------------------------------------------------------------------------------------------------------------
 using System;
 using System.Globalization;
 using System.IO;
 
 namespace PS2VagTool
 {
+    //-------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------
     internal static class CliProgram
     {
         private const int DefaultInterleaveSize = 16;
         private const int MaximumInterleaveSize = 0x100000;
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static int Main(string[] args)
         {
             if (args.Length == 0)
@@ -26,6 +41,7 @@ namespace PS2VagTool
             return args[0].Equals("Decode", StringComparison.OrdinalIgnoreCase) ? RunDecoder(args) : RunEncoder(args);
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static int RunDecoder(string[] args)
         {
             if (args.Length < 3)
@@ -72,6 +88,7 @@ namespace PS2VagTool
             return ProgramFunctions.ExecuteDecoder(args[1], args[2].Trim(), interleaveSize, sampleFrames) ? 0 : 1;
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static int RunEncoder(string[] args)
         {
             if (!ProgramFunctions.CheckFileExists(args[0]))
@@ -133,6 +150,7 @@ namespace PS2VagTool
             return ProgramFunctions.ExecuteEncoder(args[0], outputFile, forceNoLooping, forceLooping, verbose, interleaveSize) ? 0 : 1;
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static bool TryParseInterleaveSize(string value, out int interleaveSize)
         {
             interleaveSize = 0;
@@ -145,11 +163,13 @@ namespace PS2VagTool
             return parsed && interleaveSize > 0 && interleaveSize <= MaximumInterleaveSize && interleaveSize % 16 == 0;
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static void PrintInterleaveError()
         {
             Console.WriteLine("ERROR: interleave must be a positive multiple of 16 no greater than 0x100000 (for example 16, 128 or 0x80).");
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static void PrintHelp()
         {
             Console.WriteLine("PlayStation 2 Vag Tool. By jmarti856");

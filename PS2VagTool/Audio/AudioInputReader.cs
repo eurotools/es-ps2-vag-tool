@@ -1,11 +1,26 @@
+//-------------------------------------------------------------------------------------------------------------------------------
+//  _____   _____ ___   __      __     _____
+// |  __ \ / ____|__ \  \ \    / /\   / ____|
+// | |__) | (___    ) |  \ \  / /  \ | |  __
+// |  ___/ \___ \  / /    \ \/ / /\ \| | |_ |
+// | |     ____) |/ /_     \  / ____ \ |__| |
+// |_|    |_____/|____|     \/_/    \_\_____|
+//
+//-------------------------------------------------------------------------------------------------------------------------------
+// WAV and AIFF Input Reader
+//-------------------------------------------------------------------------------------------------------------------------------
 using NAudio.Wave;
 using System;
 using System.IO;
 
 namespace PS2VagTool.Audio
 {
+    //-------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------
     internal static class AudioInputReader
     {
+        //-------------------------------------------------------------------------------------------------------------------------------
         internal static AudioInputData Read(string inputFile)
         {
             string extension = Path.GetExtension(inputFile);
@@ -22,6 +37,7 @@ namespace PS2VagTool.Audio
             throw new InvalidOperationException("unsupported input format: " + extension + ". Use WAV, AIF or AIFF.");
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static AudioInputData ReadWav(string inputFile)
         {
             using (WaveFileReader reader = new WaveFileReader(inputFile))
@@ -35,6 +51,7 @@ namespace PS2VagTool.Audio
             }
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static AudioInputData ReadAiff(string inputFile)
         {
             short[] samples;
@@ -60,6 +77,7 @@ namespace PS2VagTool.Audio
             return new AudioInputData(samples, sampleRate, channels, loopInfo);
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static void ValidateFormat(WaveFormat waveFormat)
         {
             if (!PcmUtilities.IsSupportedPcmFormat(waveFormat, out string errorMessage))
@@ -68,6 +86,7 @@ namespace PS2VagTool.Audio
             }
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static void ValidateCompleteFrames(byte[] pcmBytes, int channels)
         {
             int frameSize = channels * sizeof(short);

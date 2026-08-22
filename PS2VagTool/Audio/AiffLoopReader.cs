@@ -1,3 +1,14 @@
+//-------------------------------------------------------------------------------------------------------------------------------
+//  _____   _____ ___   __      __     _____
+// |  __ \ / ____|__ \  \ \    / /\   / ____|
+// | |__) | (___    ) |  \ \  / /  \ | |  __
+// |  ___/ \___ \  / /    \ \/ / /\ \| | |_ |
+// | |     ____) |/ /_     \  / ____ \ |__| |
+// |_|    |_____/|____|     \/_/    \_\_____|
+//
+//-------------------------------------------------------------------------------------------------------------------------------
+// AIFF Loop Metadata Reader
+//-------------------------------------------------------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -5,14 +16,23 @@ using System.Text;
 
 namespace PS2VagTool.Audio
 {
+    //-------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------
     internal static class AiffLoopReader
     {
+        //-------------------------------------------------------------------------------------------------------------------------------
+        //-------------------------------------------------------------------------------------------------------------------------------
+        //-------------------------------------------------------------------------------------------------------------------------------
         private sealed class AiffMarker
         {
             internal short Id;
             internal uint Position;
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
+        //-------------------------------------------------------------------------------------------------------------------------------
+        //-------------------------------------------------------------------------------------------------------------------------------
         private struct AiffChunk
         {
             internal AiffChunk(long start, string id, uint length)
@@ -27,6 +47,7 @@ namespace PS2VagTool.Audio
             internal uint Length;
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         internal static AudioLoopInfo ReadLoop(Stream stream, long totalSampleFrames)
         {
             BinaryReader reader = new BinaryReader(stream);
@@ -71,6 +92,7 @@ namespace PS2VagTool.Audio
             return BuildCompatibilityLoopFromMarkers(markers, totalSampleFrames);
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static AudioLoopInfo BuildLoopFromInstrument(List<AiffMarker> markers, short playMode, short beginMarkerId, short endMarkerId, long totalSampleFrames)
         {
             if (playMode == 0)
@@ -99,6 +121,7 @@ namespace PS2VagTool.Audio
             return LoopValidator.Validate(startMarker.Position, endMarker.Position, totalSampleFrames, "AIFF INST");
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static AudioLoopInfo BuildSonyCompatibilityLoopFromMarkers(List<AiffMarker> markers, long totalSampleFrames)
         {
             if (markers.Count < 2)
@@ -110,6 +133,7 @@ namespace PS2VagTool.Audio
             return LoopValidator.Validate(start, markers[1].Position, totalSampleFrames, "AIFF MARK");
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static AudioLoopInfo BuildCompatibilityLoopFromMarkers(List<AiffMarker> markers, long totalSampleFrames)
         {
             if (markers.Count >= 2)
@@ -131,6 +155,7 @@ namespace PS2VagTool.Audio
             return AudioLoopInfo.None;
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static void EnsureAiffHeader(BinaryReader reader)
         {
             if (ReadChunkId(reader) != "FORM")
@@ -145,11 +170,13 @@ namespace PS2VagTool.Audio
             }
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static AiffChunk ReadChunkHeader(BinaryReader reader)
         {
             return new AiffChunk(reader.BaseStream.Position, ReadChunkId(reader), ReadUInt32BigEndian(reader));
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static void ReadMarkerChunk(BinaryReader reader, AiffChunk chunk, List<AiffMarker> markers)
         {
             if (chunk.Length < 2)
@@ -173,6 +200,7 @@ namespace PS2VagTool.Audio
             }
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static string ReadPascalString(BinaryReader reader, long chunkEnd)
         {
             int declaredLength = reader.ReadByte();
@@ -193,6 +221,7 @@ namespace PS2VagTool.Audio
             return value;
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static AiffMarker FindMarker(List<AiffMarker> markers, short id)
         {
             for (int i = 0; i < markers.Count; i++)
@@ -206,6 +235,7 @@ namespace PS2VagTool.Audio
             return null;
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static long GetNextChunkPosition(AiffChunk chunk)
         {
             long nextPosition = chunk.Start + 8 + chunk.Length;
@@ -217,11 +247,13 @@ namespace PS2VagTool.Audio
             return nextPosition;
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static string ReadChunkId(BinaryReader reader)
         {
             return new string(reader.ReadChars(4));
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static short ReadInt16BigEndian(BinaryReader reader)
         {
             byte[] buffer = reader.ReadBytes(2);
@@ -233,6 +265,7 @@ namespace PS2VagTool.Audio
             return (short)((buffer[0] << 8) | buffer[1]);
         }
 
+        //-------------------------------------------------------------------------------------------------------------------------------
         private static uint ReadUInt32BigEndian(BinaryReader reader)
         {
             byte[] buffer = reader.ReadBytes(4);
