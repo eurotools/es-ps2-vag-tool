@@ -143,9 +143,8 @@ namespace PS2VagTool.Vag
                                 min = max;
                                 predict = j;
                             }
-                            if (min <= 7)
+                            if (j == 0 && min <= 7)
                             {
-                                predict = 0;
                                 break;
                             }
                         }
