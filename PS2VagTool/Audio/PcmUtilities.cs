@@ -15,7 +15,12 @@ namespace PS2VagTool.Audio
 
         internal static byte[] ReadAllBytes(WaveStream reader)
         {
-            byte[] buffer = new byte[reader.Length];
+            if (reader.Length > int.MaxValue)
+            {
+                throw new InvalidOperationException("audio data is too large to process in memory.");
+            }
+
+            byte[] buffer = new byte[(int)reader.Length];
             int totalRead = 0;
             while (totalRead < buffer.Length)
             {

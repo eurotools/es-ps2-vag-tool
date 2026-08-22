@@ -9,6 +9,7 @@
 - Decode mono or stereo PS2 VAG files back into WAV format.
 - Full compatibility with mono AIFF files for encoding and decoding.
 - Automatic detection of loop points using "smpl" (WAV) and "MARK" (AIFF) chunks.
+- Validation of complete PCM sample frames and supported in-memory input sizes.
 
 ## Download
 To get started, you can download the latest version of the tool from the link below:

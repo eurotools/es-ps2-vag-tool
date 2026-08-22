@@ -28,7 +28,9 @@ namespace PS2VagTool.Audio
             {
                 ValidateFormat(reader.WaveFormat);
                 AudioLoopInfo loopInfo = WavLoopReader.ReadLoop(reader);
-                short[] samples = PcmUtilities.ConvertBytesToInt16Samples(PcmUtilities.ReadAllBytes(reader));
+                byte[] pcmBytes = PcmUtilities.ReadAllBytes(reader);
+                ValidateCompleteFrames(pcmBytes, reader.WaveFormat.Channels);
+                short[] samples = PcmUtilities.ConvertBytesToInt16Samples(pcmBytes);
                 return new AudioInputData(samples, reader.WaveFormat.SampleRate, reader.WaveFormat.Channels, loopInfo);
             }
         }
@@ -44,7 +46,9 @@ namespace PS2VagTool.Audio
                 ValidateFormat(reader.WaveFormat);
                 sampleRate = reader.WaveFormat.SampleRate;
                 channels = reader.WaveFormat.Channels;
-                samples = PcmUtilities.ConvertBytesToInt16Samples(PcmUtilities.ReadAllBytes(reader));
+                byte[] pcmBytes = PcmUtilities.ReadAllBytes(reader);
+                ValidateCompleteFrames(pcmBytes, channels);
+                samples = PcmUtilities.ConvertBytesToInt16Samples(pcmBytes);
             }
 
             AudioLoopInfo loopInfo;
@@ -61,6 +65,15 @@ namespace PS2VagTool.Audio
             if (!PcmUtilities.IsSupportedPcmFormat(waveFormat, out string errorMessage))
             {
                 throw new InvalidOperationException(errorMessage);
+            }
+        }
+
+        private static void ValidateCompleteFrames(byte[] pcmBytes, int channels)
+        {
+            int frameSize = channels * sizeof(short);
+            if (pcmBytes.Length == 0 || pcmBytes.Length % frameSize != 0)
+            {
+                throw new InvalidDataException("audio data is empty or contains an incomplete PCM sample frame.");
             }
         }
     }
